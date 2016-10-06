@@ -1,0 +1,26 @@
+# Copyright 2015 EPAM Systems
+# 
+# 
+# This file is part of YARPC.
+# 
+# YARPC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# YARPC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+
+uuid: 12345678-1234-1234-1234-123456789012
+endpoint: https://localhost:8443/reportportal-ws/api/v1
+launch: example_launch_name
+project: default_project
+tags: [tag1, tag2, tag3]
+#formatter_modes: [group_by_folder]
+#is_debug: true
+#disable_ssl_verification: true

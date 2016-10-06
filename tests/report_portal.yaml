@@ -1,0 +1,29 @@
+# Copyright 2015 EPAM Systems
+# 
+# 
+# This file is part of YARPC.
+# 
+# YARPC is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# YARPC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+
+username: wig_customer1
+uuid: 51aa33a2-071d-486f-96c0-72634255d1d6
+endpoint: https://ecsc00104925.epam.com/api/v1
+project: default_project
+launch: Test report portal
+tags: [external_site, desktop]
+
+#formatter_modes: [group_by_folder]
+#is_debug: true
+#disable_ssl_verification: true
+#thread_cool_off_timeout: 15

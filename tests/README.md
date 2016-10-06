@@ -1,0 +1,1 @@
+Feature and spec files in this folder are NOT automated tests. They can be executed with YARPC formatter, but verification of correctness of items created in Report Portal is not automated and has to be performed manually.
