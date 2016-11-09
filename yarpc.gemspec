@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.description            = 'Cucumber and RSpec clients for EPAM ReportPortal system'
   s.authors                = ['Aliaksandr Trush', 'Sergey Gvozdyukevich', 'Andrei Botalov']
   s.email                  = 'dzmitry_humianiuk@epam.com'
-  s.homepage               = 'https://bitbucket.org/ATrush/yarpc/'
+  s.homepage               = 'https://github.com/reportportal/agent-ruby'
   s.files                  = ['README.md', 'COPYING', 'COPYING.LESSER'] + Dir['lib/**/*']
   s.required_ruby_version  = '>= 1.9.3'
   s.license                = 'LGPL'

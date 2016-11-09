@@ -16,9 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
 
-username: wig_customer1
-uuid: 51aa33a2-071d-486f-96c0-72634255d1d6
-endpoint: https://ecsc00104925.epam.com/api/v1
+# uuid: UPDATEME
+# endpoint: UPDATEME
 project: default_project
 launch: Test report portal
 tags: [external_site, desktop]

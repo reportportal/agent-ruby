@@ -2,7 +2,7 @@
 
 ## Installation
 
-Add `gem 'yarpc'` to your `Gemfile`. Run `bundle install`.
+Add `gem 'yarpc', git: 'https://github.com/reportportal/agent-ruby.git'` to your `Gemfile`. Run `bundle install`.
 
 ## Usage (examples)
 
@@ -24,7 +24,6 @@ Alternatively specify path to configuration file via rp_config environment varia
 
 Supported settings:
 
- - username - username of the ReportPortal user
  - uuid - uuid of the ReportPortal user
  - endpoint - URI of ReportPortal web service where requests should be sent
  - launch - launch name
@@ -40,7 +39,7 @@ Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish p
  - is_debug - set to true to mark the launch as 'DEBUG' (it will appear in Debug tab in Report Portal)
  - use_standard_logger - set to true to enable logging via standard Ruby Logger class to ReportPortal. Note that log messages are transformed to strings before sending.
 
-Each of these settings can be overridden by an environment variable with the same name and 'rp_' prefix (e.g. 'rp_username' for 'username'). Environment variables take precedence over YAML configuration.
+Each of these settings can be overridden by an environment variable with the same name and 'rp_' prefix (e.g. 'rp_uuid' for 'uuid'). Environment variables take precedence over YAML configuration.
 Environment variable values are parsed as YAML entities.
 
 ## WebMock configuration
@@ -76,4 +75,4 @@ Note: Launch id is shared between independent processes (as is the case with par
 
 ## Links
 
- - [ReportPortal](https://git.epam.com/epmc-tst/reportportal)
+ - [ReportPortal](https://github.com/reportportal/)
