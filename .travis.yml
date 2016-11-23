@@ -3,3 +3,6 @@ rvm:
   - 2.2
   - jruby
   - rbx-2
+
+script:
+- bundle exec rake build test
