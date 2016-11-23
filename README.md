@@ -2,21 +2,21 @@
 
 ## Installation
 
-Add `gem 'yarpc', git: 'https://github.com/reportportal/agent-ruby.git'` to your `Gemfile`. Run `bundle install`.
+Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` to your `Gemfile`. Run `bundle install`.
 
 ## Usage (examples)
 
 * With Cucumber:
 
-```cucumber <other options> -f YARPC::Cucumber::Formatter```
+```cucumber <other options> -f ReportPortal::Cucumber::Formatter```
 
 * With Cucumber and parallel_tests gem:
 
-```parallel_cucumber <some options> -o '<some other options> -f YARPC::Cucumber::ParallelFormatter'```
+```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::ParallelFormatter'```
 
 * With RSpec:
 
-```rspec <other options> -f YARPC::RSpec::Formatter```
+```rspec <other options> -f ReportPortal::RSpec::Formatter```
 
 ## Configuration
 Create report_portal.yml configuration file in one of the following folders of your project: '.', './.config', './config' (see report_portal.yaml.example).
@@ -65,11 +65,11 @@ Experimental support for three common logging frameworks was added:
 - [Logging](http://rubygems.org/gems/logging)
 - [Log4r](https://rubygems.org/gems/log4r)
 
-To use Logger, set use_standard_logger parameter to true (see Configuration chapter). For the other two corresponding appenders/outputters are available under yarpc/logging.
+To use Logger, set use_standard_logger parameter to true (see Configuration chapter). For the other two corresponding appenders/outputters are available under reportportal/logging.
 
 ## Parallel formatter
 
-YARPC::Cucumber::ParallelFormatter can be used for tests started via parallel_tests gem.
+ReportPortal::Cucumber::ParallelFormatter can be used for tests started via parallel_tests gem.
 
 Note: Launch id is shared between independent processes (as is the case with parallel_tests gem) via a file in `Dir.tmpdir`.
 
