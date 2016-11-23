@@ -1,43 +1,43 @@
 # Copyright 2015 EPAM Systems
 # 
 # 
-# This file is part of YARPC.
+# This file is part of Report Portal.
 # 
-# YARPC is free software: you can redistribute it and/or modify
+# Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
-# YARPC is distributed in the hope that it will be useful,
+# ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 # 
 # You should have received a copy of the GNU Lesser General Public License
-# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'tree'
 require 'cucumber/formatter/io'
 require 'securerandom'
 
-require_relative '../../yarpc'
+require_relative '../../reportportal'
 require_relative '../logging/logger'
 
-module YARPC
+module ReportPortal
   module Cucumber
     class LegacyFormatter
       include ::Cucumber::Formatter::Io
 
       def attach_to_launch?
-        YARPC::Settings.instance.formatter_modes.include?('attach_to_launch')
+        ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
       end
 
       def rerun?
-        YARPC::Settings.instance.formatter_modes.include?('rerun')
+        ReportPortal::Settings.instance.formatter_modes.include?('rerun')
       end
 
       def create_folder_nodes?
-        YARPC::Settings.instance.formatter_modes.include?('group_by_folder')
+        ReportPortal::Settings.instance.formatter_modes.include?('group_by_folder')
       end
 
       def parallel?
@@ -52,7 +52,7 @@ module YARPC
         @root_path = File.absolute_path('.') + File::SEPARATOR
         @args = options.expanded_args_without_drb.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
 
-        YARPC.patch_logger if YARPC::Settings.instance.use_standard_logger
+        ReportPortal.patch_logger if ReportPortal::Settings.instance.use_standard_logger
 
         @expand_mode = options[:expand]
         # HACK: patch Cucumber a little bit to support correct hook reporting
@@ -82,15 +82,15 @@ module YARPC
         create_node_tree(features)
 
         if attach_to_launch?
-          YARPC.launch_id =
-            if YARPC::Settings.instance.launch_id
-              YARPC::Settings.instance.launch_id
+          ReportPortal.launch_id =
+            if ReportPortal::Settings.instance.launch_id
+              ReportPortal::Settings.instance.launch_id
             else
-              file_path = YARPC::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
               File.read(file_path)
             end
 
-          p "Attaching to launch #{YARPC.launch_id}"
+          p "Attaching to launch #{ReportPortal.launch_id}"
         else
           start_launch
         end
@@ -109,14 +109,14 @@ module YARPC
       end
 
       def after_feature(feature)
-        fail "Unclosed scenario #{YARPC.current_scenario.name} upon completion of feature #{feature.name}" unless YARPC.current_scenario.nil?
+        fail "Unclosed scenario #{ReportPortal.current_scenario.name} upon completion of feature #{feature.name}" unless ReportPortal.current_scenario.nil?
         node_to_finish = @current_feature_node
         @current_feature_node = nil
         if rerun? || attach_to_launch?
           @unfinished_items << node_to_finish
           return
         end
-        YARPC.finish_item(node_to_finish.content)
+        ReportPortal.finish_item(node_to_finish.content)
         unless folder_items_may_be_used_else?
           close_parents_of(node_to_finish)
         end
@@ -139,7 +139,7 @@ module YARPC
         fail 'Encountered orphan feature element! This is a bug.' if @current_feature_node.nil?
         @is_outline = feature_element.is_a? ::Cucumber::Ast::ScenarioOutline
         start_scenario(feature_element) unless @is_outline
-        YARPC.send_log(:skipped, 'Scenario was skipped due to background failure', YARPC.now) if @background_failed
+        ReportPortal.send_log(:skipped, 'Scenario was skipped due to background failure', ReportPortal.now) if @background_failed
       end
 
       def after_feature_element(feature_element)
@@ -149,7 +149,7 @@ module YARPC
       def before_step(step)
         @suppress_background_logs = false if step.instance_variable_get(:@background).nil?
         unless @suppress_background_logs
-          YARPC.send_log(:passed, format_step_name(step), YARPC.now)
+          ReportPortal.send_log(:passed, format_step_name(step), ReportPortal.now)
         end
       end
 
@@ -168,12 +168,12 @@ module YARPC
       def before_table_row(row)
         if row.is_a?(::Cucumber::Ast::OutlineTable::ExampleRow) && !row.send(:header?)
           start_scenario(row.scenario_outline, @outline_row_index, row.line)
-          YARPC.send_log(:skipped, 'Scenario Outline was skipped due to background failure', YARPC.now) if @background_failed
+          ReportPortal.send_log(:skipped, 'Scenario Outline was skipped due to background failure', ReportPortal.now) if @background_failed
           # generate fake start times for log messages
           @outline_steps = row.instance_variable_get(:@step_invocations).map do |step|
             @suppress_background_logs = false if step.instance_variable_get(:@background).nil?
             sleep 0.01
-            YARPC.now
+            ReportPortal.now
           end
           @outline_row_index += 1
         end
@@ -183,8 +183,8 @@ module YARPC
         if row.is_a?(::Cucumber::Ast::OutlineTable::ExampleRow) && !row.send(:header?)
           @outline_steps.zip(row.instance_variable_get(:@step_invocations)).each do |time, step|
             unless expand || @suppress_background_logs # in expand mode these were already reported
-              YARPC.send_log(step.status, format_step_name(step), time)
-              YARPC.send_log(step.status, "STEP #{step.status.to_s.upcase}", time + 1)
+              ReportPortal.send_log(step.status, format_step_name(step), time)
+              ReportPortal.send_log(step.status, "STEP #{step.status.to_s.upcase}", time + 1)
             end
 
             exception = step.exception || step.instance_variable_get(:@reported_exception)
@@ -208,20 +208,20 @@ module YARPC
         if [:pending, :undefined].include? step.status
           @forced_issue = step.exception.message
         end
-        YARPC.send_log(step.status, "STEP #{step.status.to_s.upcase}", YARPC.now) if !@suppress_background_logs && (!@is_outline || @expand_mode)
+        ReportPortal.send_log(step.status, "STEP #{step.status.to_s.upcase}", ReportPortal.now) if !@suppress_background_logs && (!@is_outline || @expand_mode)
       end
 
       def puts(message, _ = :info)
-        YARPC.send_log(:passed, message, YARPC.now)
+        ReportPortal.send_log(:passed, message, ReportPortal.now)
         @io.puts(message)
       end
 
       def embed(src, _, label)
-        YARPC.send_file(:failed, src, label)
+        ReportPortal.send_file(:failed, src, label)
       end
 
       def exception(exception, _)
-        YARPC.send_log(:failed, %(#{exception.class}: #{exception.message}\n\nStacktrace: #{exception.backtrace.join("\n")}), YARPC.now) unless @suppress_background_logs
+        ReportPortal.send_log(:failed, %(#{exception.class}: #{exception.message}\n\nStacktrace: #{exception.backtrace.join("\n")}), ReportPortal.now) unless @suppress_background_logs
       end
 
       private
@@ -252,14 +252,14 @@ module YARPC
       end
 
       def start_launch
-        YARPC.start_launch(@args)
+        ReportPortal.start_launch(@args)
       end
 
       def finish_launch
         if rerun?
           close_items_with_parentage(@unfinished_items)
         end
-        YARPC.finish_launch
+        ReportPortal.finish_launch
       end
 
       def start_scenario(feature_element, row = '', line = '')
@@ -281,16 +281,16 @@ module YARPC
         end
         tags = feature_element.source_tag_names
 
-        YARPC.current_scenario = YARPC::TestItem.new(name, type, nil, YARPC.now, description, nil, tags)
-        scenario_node = Tree::TreeNode.new(SecureRandom.hex, YARPC.current_scenario) # name must be unique across siblings
+        ReportPortal.current_scenario = ReportPortal::TestItem.new(name, type, nil, ReportPortal.now, description, nil, tags)
+        scenario_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario) # name must be unique across siblings
         @current_feature_node << scenario_node
-        YARPC.current_scenario.id = YARPC.start_item(scenario_node)
+        ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
         @forced_issue = nil
       end
 
       def finish_scenario(status)
-        YARPC.finish_item(YARPC.current_scenario, status, nil, @forced_issue)
-        YARPC.current_scenario = nil
+        ReportPortal.finish_item(ReportPortal.current_scenario, status, nil, @forced_issue)
+        ReportPortal.current_scenario = nil
       end
 
       def create_node_tree(features)
@@ -315,7 +315,7 @@ module YARPC
               tags = []
               type = :SUITE
             end
-            item = YARPC::TestItem.new(name, type, nil, nil, description, nil, tags)
+            item = ReportPortal::TestItem.new(name, type, nil, nil, description, nil, tags)
             child_node = Tree::TreeNode.new(path_component, item)
             parent_node << child_node
             parent_node = child_node
@@ -325,7 +325,7 @@ module YARPC
 
       def close_items_with_parentage(items)
         items.each do |item_node|
-          YARPC.finish_item(item_node.content)
+          ReportPortal.finish_item(item_node.content)
           close_parents_of(item_node)
         end
       end
@@ -333,7 +333,7 @@ module YARPC
       def close_parents_of(item_node)
         item_node.parentage.each do |node|
           next if node.is_root? || node.children.any? { |child| !child.content.closed }
-          YARPC.finish_item(node.content)
+          ReportPortal.finish_item(node.content)
           node.content.closed = true
         end
       end
@@ -345,12 +345,12 @@ module YARPC
           current_node = current_node[path_component]
           fail "Trying to reopen already closed node #{path_component}. This is a bug." if current_node.content.closed
 
-          if folder_items_may_be_used_else? && current_node.content.id.nil? && (id_of_created_item = YARPC.item_id_of(current_node))
+          if folder_items_may_be_used_else? && current_node.content.id.nil? && (id_of_created_item = ReportPortal.item_id_of(current_node))
             current_node.content.id = id_of_created_item
             current_node.content.closed = false
           elsif current_node.content.closed.nil? # Is nil only if item wasn't started yet
-            current_node.content.start_time = YARPC.now
-            current_node.content.id = YARPC.start_item(current_node)
+            current_node.content.start_time = ReportPortal.now
+            current_node.content.id = ReportPortal.start_item(current_node)
             current_node.content.closed = false
           end
         end

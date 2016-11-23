@@ -1,24 +1,24 @@
 # Copyright 2015 EPAM Systems
 # 
 # 
-# This file is part of YARPC.
+# This file is part of Report Portal.
 # 
-# YARPC is free software: you can redistribute it and/or modify
+# Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
-# YARPC is distributed in the hope that it will be useful,
+# ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 # 
 # You should have received a copy of the GNU Lesser General Public License
-# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 require_relative 'report'
 
-module YARPC
+module ReportPortal
   module Cucumber
     class ParallelReport < Report
       FILE_WITH_LAUNCH_ID = Pathname(Dir.tmpdir) + "parallel_launch_id_for_#{Process.ppid}.lck"
@@ -27,19 +27,19 @@ module YARPC
         true
       end
 
-      def initialize(_runtime, _path_or_io, _options, desired_time = YARPC.now)
+      def initialize(_runtime, _path_or_io, _options, desired_time = ReportPortal.now)
         if ParallelTests.first_process?
           File.open(FILE_WITH_LAUNCH_ID, 'w') do |f|
             f.flock(File::LOCK_EX)
             start_launch(desired_time)
-            f.write(YARPC.launch_id)
+            f.write(ReportPortal.launch_id)
             f.flush
             f.flock(File::LOCK_UN)
           end
         else
           File.open(FILE_WITH_LAUNCH_ID, 'r') do |f|
             f.flock(File::LOCK_SH)
-            YARPC.launch_id = f.read
+            ReportPortal.launch_id = f.read
             f.flock(File::LOCK_UN)
           end
         end
@@ -48,7 +48,7 @@ module YARPC
         @last_used_time ||= 0
       end
 
-      def done(desired_time = YARPC.now)
+      def done(desired_time = ReportPortal.now)
         end_feature(desired_time) if @feature_node
 
         if ParallelTests.first_process?
@@ -57,10 +57,10 @@ module YARPC
           File.delete(FILE_WITH_LAUNCH_ID)
 
           unless attach_to_launch?
-            $stdout.puts "Finishing launch #{YARPC.launch_id}"
-            YARPC.close_child_items(nil)
+            $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
+            ReportPortal.close_child_items(nil)
             time_to_send = time_to_send(desired_time)
-            YARPC.finish_launch(time_to_send)
+            ReportPortal.finish_launch(time_to_send)
           end
         end
       end

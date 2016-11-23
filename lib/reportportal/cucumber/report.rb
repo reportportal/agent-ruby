@@ -1,30 +1,30 @@
 # Copyright 2015 EPAM Systems
 # 
 # 
-# This file is part of YARPC.
+# This file is part of Report Portal.
 # 
-# YARPC is free software: you can redistribute it and/or modify
+# Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
-# YARPC is distributed in the hope that it will be useful,
+# ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 # 
 # You should have received a copy of the GNU Lesser General Public License
-# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'cucumber/formatter/io'
 require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
 
-require_relative '../../yarpc'
+require_relative '../../reportportal'
 require_relative '../logging/logger'
 
-module YARPC
+module ReportPortal
   module Cucumber
     # @api private
     class Report
@@ -33,7 +33,7 @@ module YARPC
       end
 
       def attach_to_launch?
-        YARPC::Settings.instance.formatter_modes.include?('attach_to_launch')
+        ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
       end
 
       def initialize
@@ -42,23 +42,23 @@ module YARPC
         start_launch
       end
 
-      def start_launch(desired_time = YARPC.now)
+      def start_launch(desired_time = ReportPortal.now)
         if attach_to_launch?
-          YARPC.launch_id =
-            if YARPC::Settings.instance.launch_id
-              YARPC::Settings.instance.launch_id
+          ReportPortal.launch_id =
+            if ReportPortal::Settings.instance.launch_id
+              ReportPortal::Settings.instance.launch_id
             else
-              file_path = YARPC::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
               File.read(file_path)
             end
-          $stdout.puts "Attaching to launch #{YARPC.launch_id}"
+          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           cmd_args = ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
-          YARPC.start_launch(cmd_args, time_to_send(desired_time))
+          ReportPortal.start_launch(cmd_args, time_to_send(desired_time))
         end
       end
 
-      def before_test_case(event, desired_time = YARPC.now) # TODO: time should be a required argument
+      def before_test_case(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
         test_case = event.test_case
         feature = test_case.feature
         unless same_feature_as_previous_test_case?(feature)
@@ -71,13 +71,13 @@ module YARPC
         tags = test_case.tags.map(&:name)
         type = :STEP
 
-        YARPC.current_scenario = YARPC::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
-        scenario_node = Tree::TreeNode.new(SecureRandom.hex, YARPC.current_scenario)
+        ReportPortal.current_scenario = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
+        scenario_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
         @feature_node << scenario_node
-        YARPC.current_scenario.id = YARPC.start_item(scenario_node)
+        ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
       end
 
-      def after_test_case(event, desired_time = YARPC.now)
+      def after_test_case(event, desired_time = ReportPortal.now)
         result = event.result
         status = result.to_sym
         issue = nil
@@ -85,11 +85,11 @@ module YARPC
           status = :failed
           issue = result.message
         end
-        YARPC.finish_item(YARPC.current_scenario, status, time_to_send(desired_time), issue)
-        YARPC.current_scenario = nil
+        ReportPortal.finish_item(ReportPortal.current_scenario, status, time_to_send(desired_time), issue)
+        ReportPortal.current_scenario = nil
       end
 
-      def before_test_step(event, desired_time = YARPC.now)
+      def before_test_step(event, desired_time = ReportPortal.now)
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
@@ -99,11 +99,11 @@ module YARPC
           elsif step_source.multiline_arg.data_table?
             message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
           end
-          YARPC.send_log(:trace, message, time_to_send(desired_time))
+          ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
       end
 
-      def after_test_step(event, desired_time = YARPC.now)
+      def after_test_step(event, desired_time = ReportPortal.now)
         test_step = event.test_step
         result = event.result
         status = result.to_sym
@@ -115,7 +115,7 @@ module YARPC
                            else
                              sprintf("Undefined step: %s:\n%s", test_step.name, test_step.source.last.backtrace_line)
                            end
-          YARPC.send_log(:error, exception_info, time_to_send(desired_time))
+          ReportPortal.send_log(:error, exception_info, time_to_send(desired_time))
         end
 
         if status != :passed
@@ -127,26 +127,26 @@ module YARPC
                         location = test_step.location
                         "#{hook_class_name} at `#{location}`"
                       end
-          YARPC.send_log(log_level, "#{step_type} #{status}", time_to_send(desired_time))
+          ReportPortal.send_log(log_level, "#{step_type} #{status}", time_to_send(desired_time))
         end
       end
 
-      def done(desired_time = YARPC.now)
+      def done(desired_time = ReportPortal.now)
         end_feature(desired_time) if @feature_node
 
         unless attach_to_launch?
           close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
           time_to_send = time_to_send(desired_time)
-          YARPC.finish_launch(time_to_send)
+          ReportPortal.finish_launch(time_to_send)
         end
       end
 
-      def puts(message, desired_time = YARPC.now)
-        YARPC.send_log(:info, message, time_to_send(desired_time))
+      def puts(message, desired_time = ReportPortal.now)
+        ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
-      def embed(src, _mime_type, label, desired_time = YARPC.now)
-        YARPC.send_file(:info, src, label, time_to_send(desired_time))
+      def embed(src, _mime_type, label, desired_time = ReportPortal.now)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time))
       end
 
       private
@@ -187,15 +187,15 @@ module YARPC
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            if parallel? && index < path_components.size - 1 && (id_of_created_item = YARPC.item_id_of(child_node)) # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-              item = YARPC::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
+            if parallel? && index < path_components.size - 1 && (id_of_created_item = ReportPortal.item_id_of(child_node)) # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
+              item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
             else
-              item = YARPC::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
+              item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
-              item.id = YARPC.start_item(child_node) # TODO: multithreading
+              item.id = ReportPortal.start_item(child_node) # TODO: multithreading
             end
           end
           parent_node = child_node
@@ -204,7 +204,7 @@ module YARPC
       end
 
       def end_feature(desired_time)
-        YARPC.finish_item(@feature_node.content, nil, time_to_send(desired_time))
+        ReportPortal.finish_item(@feature_node.content, nil, time_to_send(desired_time))
         # Folder items can't be finished here because when the folder started we didn't track
         #   which features the folder contains.
         # It's not easy to do it using Cucumber currently:
@@ -214,7 +214,7 @@ module YARPC
       def close_all_children_of(root_node)
         root_node.postordered_each do |node|
           if !node.is_root? && !node.content.closed
-            YARPC.finish_item(node.content)
+            ReportPortal.finish_item(node.content)
           end
         end
       end

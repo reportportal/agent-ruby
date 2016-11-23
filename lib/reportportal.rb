@@ -1,20 +1,20 @@
 # Copyright 2015 EPAM Systems
 # 
 # 
-# This file is part of YARPC.
+# This file is part of Report Portal.
 # 
-# YARPC is free software: you can redistribute it and/or modify
+# Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
-# YARPC is distributed in the hope that it will be useful,
+# ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 # 
 # You should have received a copy of the GNU Lesser General Public License
-# along with YARPC.  If not, see <http://www.gnu.org/licenses/>.
+# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'json'
 require 'rest_client'
@@ -22,10 +22,10 @@ require 'uri'
 require 'pathname'
 require 'tempfile'
 
-require_relative 'yarpc/settings'
-require_relative 'yarpc/patches/rest_client'
+require_relative 'reportportal/settings'
+require_relative 'reportportal/patches/rest_client'
 
-module YARPC
+module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', unknown: 'UNKNOWN' } # TODO: remove unknown as it's not listed and it's strange to have such log level
 
