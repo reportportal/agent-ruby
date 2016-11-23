@@ -29,9 +29,9 @@ Gem::Specification.new do |s|
   s.authors                = ['Aliaksandr Trush', 'Sergey Gvozdyukevich', 'Andrei Botalov']
   s.email                  = 'dzmitry_humianiuk@epam.com'
   s.homepage               = 'https://github.com/reportportal/agent-ruby'
-  s.files                  = ['README.md', 'COPYING', 'COPYING.LESSER'] + Dir['lib/**/*']
+  s.files                  = ['README.md', 'LICENSE', 'LICENSE.LESSER'] + Dir['lib/**/*']
   s.required_ruby_version  = '>= 1.9.3'
-  s.license                = 'LGPL'
+  s.license                = 'LGPL-3.0'
 
   s.add_dependency('rest-client', '~> 2.0')
   s.add_dependency('rubytree', '>=0.9.3')
