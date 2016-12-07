@@ -22,8 +22,8 @@ require 'uri'
 require 'pathname'
 require 'tempfile'
 
-require_relative 'reportportal/settings'
-require_relative 'reportportal/patches/rest_client'
+require_relative 'report_portal/settings'
+require_relative 'report_portal/patches/rest_client'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
