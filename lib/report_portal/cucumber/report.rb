@@ -145,8 +145,8 @@ module ReportPortal
         ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
-      def embed(src, _mime_type, label, desired_time = ReportPortal.now)
-        ReportPortal.send_file(:info, src, label, time_to_send(desired_time))
+      def embed(src, mime_type, label, desired_time = ReportPortal.now)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
       end
 
       private
