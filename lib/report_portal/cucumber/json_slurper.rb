@@ -90,14 +90,7 @@ module ReportPortal
               error = step['result']['error_message']
               ReportPortal.send_log(:failed, error, get_time) if error
               (step['embeddings'] || []).each do |embedding|
-                # I know I am being stupid, but it is just easier to decode to a file and post it than to find out how to send it encoded
-                extension = ".#{MIME::Types[embedding['mime_type'] || 'text/plain'].first.extensions.first}"
-                Tempfile.open(['embedding', extension]) do |file|
-                  file.binmode
-                  file.write(Base64.decode64(embedding['data']))
-                  file.rewind
-                  ReportPortal.send_file(:failed, file, 'Embedding', get_time)
-                end
+                ReportPortal.send_file(:failed, embedding['data'], 'Embedding', get_time, embedding['mime_type'])
               end
               statuses << step['result']['status']
               forced_issue ||= case step['result']['status']

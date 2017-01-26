@@ -216,8 +216,8 @@ module ReportPortal
         @io.puts(message)
       end
 
-      def embed(src, _, label)
-        ReportPortal.send_file(:failed, src, label)
+      def embed(src, mime_type, label)
+        ReportPortal.send_file(:failed, src, label, mime_type)
       end
 
       def exception(exception, _)

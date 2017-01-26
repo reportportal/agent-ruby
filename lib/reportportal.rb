@@ -117,8 +117,16 @@ module ReportPortal
       end
     end
 
-    def send_file(status, path, label = nil, time = now)
+    def send_file(status, path, label = nil, time = now, mime_type='image/png')
       url = "#{Settings.instance.project_url}/log"
+      unless File.file?(path)
+        extension = ".#{MIME::Types[mime_type].first.extensions.first}"
+        temp = Tempfile.open(['file',extension])
+        temp.binmode
+        temp.write(Base64.decode64(path))
+        temp.rewind
+        path = temp
+      end
       File.open(File.realpath(path), 'rb') do |file|
         label ||= File.basename(file)
         json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
