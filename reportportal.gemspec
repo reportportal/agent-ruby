@@ -33,4 +33,5 @@ Gem::Specification.new do |s|
   s.license                = 'LGPL-3.0'
 
   s.add_dependency('rest-client', '~> 2.0')
+  s.add_dependency('rubytree', '>=0.9.3')
 end
