@@ -2,6 +2,8 @@
 
 ## Installation
 
+Use Ruby 2.2+
+
 Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` to your `Gemfile`. Run `bundle install`.
 
 ## Usage (examples)
