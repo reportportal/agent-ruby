@@ -20,7 +20,7 @@ source 'https://rubygems.org'
 
 gem 'cucumber', '~> 2.2'
 gem 'rest-client'
-gem 'rubytree', git: 'https://github.com/razboev/RubyTree'
+gem 'rubytree'
 gem 'rspec'
 gem 'rake'
 gem 'parallel_tests'

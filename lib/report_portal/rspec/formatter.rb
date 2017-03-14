@@ -20,6 +20,8 @@ require 'securerandom'
 require 'tree'
 require 'rspec/core'
 
+Object.send(:remove_const, :Warning) if Object.const_defined?(:Warning)
+
 require_relative '../../reportportal'
 
 # TODO: Screenshots

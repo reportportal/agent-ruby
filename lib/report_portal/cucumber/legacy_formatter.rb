@@ -23,6 +23,8 @@ require 'securerandom'
 require_relative '../../reportportal'
 require_relative '../logging/logger'
 
+Object.send(:remove_const, :Warning) if Object.const_defined?(:Warning)
+
 module ReportPortal
   module Cucumber
     class LegacyFormatter
