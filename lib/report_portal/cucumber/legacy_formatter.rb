@@ -16,14 +16,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
+Object.send(:remove_const, :Warning) if Object.const_defined?(:Warning)
 require 'tree'
 require 'cucumber/formatter/io'
 require 'securerandom'
 
 require_relative '../../reportportal'
 require_relative '../logging/logger'
-
-Object.send(:remove_const, :Warning) if Object.const_defined?(:Warning)
 
 module ReportPortal
   module Cucumber
