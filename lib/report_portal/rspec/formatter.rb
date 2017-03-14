@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
+Object.send(:remove_const, :Warning) if Object.const_defined?(:Warning)
 require 'securerandom'
 require 'tree'
 require 'rspec/core'
