@@ -29,6 +29,7 @@ Supported settings:
  - uuid - uuid of the ReportPortal user
  - endpoint - URI of ReportPortal web service where requests should be sent
  - launch - launch name
+ - description - custom launch description
  - project - project name
  - tags - array of tags for the launch
  - formatter_modes - array of modes that modify formatter behavior, see [formatter modes](#formatter_modes)
