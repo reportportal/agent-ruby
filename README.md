@@ -32,8 +32,8 @@ Supported settings:
  - project - project name
  - tags - array of tags for the launch
  - formatter_modes - array of modes that modify formatter behavior, see [formatter modes](#formatter_modes)
- - launch_id - id of previously created launch (to be used if formatter_modes contains attach_to_launch)
- - file_with_launch_id - path to file with id of launch (to be used if formatter_modes contains attach_to_launch)
+ - launch_id - if `formatter_modes` contains `attach_to_launch` then it specifies id of previously created launch. Otherwise, it's a custom launch id to be used instead of default value (cucumber ARGV)  
+ - file_with_launch_id - path to file with id of launch (to be used if `formatter_modes` contains `attach_to_launch`)
  - disable_ssl_verification - set to true to disable SSL verification on connect to ReportPortal (potential security hole!). Set `disable_ssl_verification` to `true` if you see the following error:
 ```
 Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish produced an exception: RestClient::SSLCertificateNotVerified: SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
