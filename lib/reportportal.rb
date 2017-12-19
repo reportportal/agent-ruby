@@ -51,7 +51,7 @@ module ReportPortal
       case status
         when :passed
           LOG_LEVELS[:info]
-        when :failed, :undefined, :pending
+        when :failed, :undefined, :pending, :error
           LOG_LEVELS[:error]
         when :skipped
           LOG_LEVELS[:warn]
