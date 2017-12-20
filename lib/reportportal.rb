@@ -49,18 +49,20 @@ module ReportPortal
 
     def status_to_level(status)
       case status
-        when :passed
-          LOG_LEVELS[:info]
-        when :failed, :undefined, :pending, :error
-          LOG_LEVELS[:error]
-        when :skipped
-          LOG_LEVELS[:warn]
-        when :unknown
-          LOG_LEVELS[:unknown]
-        when :fatal
-          LOG_LEVELS[:fatal]
-        else
-          LOG_LEVELS[:info]
+      when :passed
+        LOG_LEVELS[:info]
+      when :failed, :undefined, :pending, :error
+        LOG_LEVELS[:error]
+      when :skipped
+        LOG_LEVELS[:warn]
+      when :unknown
+        LOG_LEVELS[:unknown]
+      when :fatal
+        LOG_LEVELS[:fatal]
+      when :trace
+        LOG_LEVELS[:trace]
+      else
+        LOG_LEVELS[:info]
       end
     end
 
