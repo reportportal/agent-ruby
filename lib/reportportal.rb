@@ -55,14 +55,8 @@ module ReportPortal
         LOG_LEVELS[:error]
       when :skipped
         LOG_LEVELS[:warn]
-      when :unknown
-        LOG_LEVELS[:unknown]
-      when :fatal
-        LOG_LEVELS[:fatal]
-      when :trace
-        LOG_LEVELS[:trace]
       else
-        LOG_LEVELS[:info]
+        LOG_LEVELS.fetch(status, :info)
       end
     end
 
