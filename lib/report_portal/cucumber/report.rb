@@ -59,7 +59,7 @@ module ReportPortal
         end
       end
 
-      def before_test_case(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
+      def test_case_started(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
         test_case = event.test_case
         feature = test_case.feature
         unless same_feature_as_previous_test_case?(feature)
@@ -78,7 +78,7 @@ module ReportPortal
         ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
       end
 
-      def after_test_case(event, desired_time = ReportPortal.now)
+      def test_case_finished(event, desired_time = ReportPortal.now)
         result = event.result
         status = result.to_sym
         issue = nil
@@ -90,7 +90,7 @@ module ReportPortal
         ReportPortal.current_scenario = nil
       end
 
-      def before_test_step(event, desired_time = ReportPortal.now)
+      def test_step_started(event, desired_time = ReportPortal.now)
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
@@ -104,7 +104,7 @@ module ReportPortal
         end
       end
 
-      def after_test_step(event, desired_time = ReportPortal.now)
+      def test_step_finished(event, desired_time = ReportPortal.now)
         test_step = event.test_step
         result = event.result
         status = result.to_sym
@@ -150,6 +150,10 @@ module ReportPortal
         ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
       end
 
+      def method_missing(**args)
+        puts "Method missing #{args.inspect}"
+      end
+
       private
 
       # Report Portal sorts logs by time. However, several logs might have the same time.
@@ -167,13 +171,13 @@ module ReportPortal
       end
 
       def same_feature_as_previous_test_case?(feature)
-        @feature_node && @feature_node.name == feature.file.split(File::SEPARATOR).last
+        @feature_node && @feature_node.name == feature.location.file.split(File::SEPARATOR).last
       end
 
       def start_feature_with_parentage(feature, desired_time)
         parent_node = @root_node
         child_node = nil
-        path_components = feature.file.split(File::SEPARATOR)
+        path_components = feature.location.file.split(File::SEPARATOR)
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node

@@ -39,7 +39,7 @@ module ReportPortal
 
         @io = config.out_stream
 
-        [:before_test_case, :after_test_case, :before_test_step, :after_test_step].each do |event_name|
+        [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished].each do |event_name|
           config.on_event event_name do |event|
             @queue.push([event_name, event, ReportPortal.now])
           end
