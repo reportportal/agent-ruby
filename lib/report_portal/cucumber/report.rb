@@ -150,10 +150,6 @@ module ReportPortal
         ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
       end
 
-      def method_missing(**args)
-        puts "Method missing #{args.inspect}"
-      end
-
       private
 
       # Report Portal sorts logs by time. However, several logs might have the same time.
