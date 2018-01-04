@@ -44,6 +44,7 @@ module ReportPortal
             @queue.push([event_name, event, ReportPortal.now])
           end
         end
+        config.on_event :test_run_finished, &method(:done)
       end
 
       def puts(message)
@@ -56,8 +57,7 @@ module ReportPortal
         @queue.push([:embed, *args, ReportPortal.now])
       end
 
-      # @api private
-      def done
+      def done(_event)
         @queue.push([:done, ReportPortal.now])
         sleep 0.03 while !@queue.empty? || @queue.num_waiting == 0 # TODO: how to interrupt launch if the user aborted execution
         @thread.kill

@@ -94,7 +94,7 @@ module ReportPortal
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
-          message = "-- #{step_source.keyword}#{step_source.name} --"
+          message = "-- #{step_source.keyword}#{step_source.text} --"
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
@@ -114,7 +114,7 @@ module ReportPortal
                              ex = result.exception
                              sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
                            else
-                             sprintf("Undefined step: %s:\n%s", test_step.name, test_step.source.last.backtrace_line)
+                             sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
                            end
           ReportPortal.send_log(:error, exception_info, time_to_send(desired_time))
         end
