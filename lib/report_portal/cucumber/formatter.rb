@@ -39,11 +39,12 @@ module ReportPortal
 
         @io = config.out_stream
 
-        [:before_test_case, :after_test_case, :before_test_step, :after_test_step].each do |event_name|
+        [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished].each do |event_name|
           config.on_event event_name do |event|
             @queue.push([event_name, event, ReportPortal.now])
           end
         end
+        config.on_event :test_run_finished, &method(:on_test_run_finished)
       end
 
       def puts(message)
@@ -56,8 +57,7 @@ module ReportPortal
         @queue.push([:embed, *args, ReportPortal.now])
       end
 
-      # @api private
-      def done
+      def on_test_run_finished(_event)
         @queue.push([:done, ReportPortal.now])
         sleep 0.03 while !@queue.empty? || @queue.num_waiting == 0 # TODO: how to interrupt launch if the user aborted execution
         @thread.kill

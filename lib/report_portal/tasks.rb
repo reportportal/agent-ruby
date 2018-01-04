@@ -19,7 +19,7 @@
 require 'rake'
 require 'pathname'
 require 'tempfile'
-require 'reportportal'
+require_relative '../reportportal'
 
 namespace :reportportal do
   desc 'Start launch in Report Portal and print its id to $stdout (needed for use with ReportPortal::Cucumber::AttachToLaunchFormatter)'
