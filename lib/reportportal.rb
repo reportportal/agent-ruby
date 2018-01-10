@@ -27,7 +27,7 @@ require_relative 'report_portal/patches/rest_client'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
-  LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', unknown: 'UNKNOWN' } # TODO: remove unknown as it's not listed and it's strange to have such log level
+  LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
 
   @response_handler = proc do |response, request, result, &block|
     if (200..207).include? response.code
@@ -48,17 +48,16 @@ module ReportPortal
     end
 
     def status_to_level(status)
-      LOG_LEVELS.fetch(status)
-      # case status
-      # when :failed, :undefined, :pending
-      #   LOG_LEVELS[:error]
-      # when :skipped
-      #   LOG_LEVELS[:warn]
-      # when :passed
-      #   LOG_LEVELS[:info]
-      # else
-      #   LOG_LEVELS.values.include?(status) ? status : LOG_LEVELS[:unknown]
-      # end
+      case status
+      when :passed
+        LOG_LEVELS[:info]
+      when :failed, :undefined, :pending, :error
+        LOG_LEVELS[:error]
+      when :skipped
+        LOG_LEVELS[:warn]
+      else
+        LOG_LEVELS.fetch(status, LOG_LEVELS.fetch[:info])
+      end
     end
 
     def start_launch(description, start_time = now)
