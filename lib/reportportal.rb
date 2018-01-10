@@ -56,7 +56,7 @@ module ReportPortal
       when :skipped
         LOG_LEVELS[:warn]
       else
-        LOG_LEVELS.fetch(status, :info)
+        LOG_LEVELS.fetch(status, LOG_LEVELS.fetch[:info])
       end
     end
 
