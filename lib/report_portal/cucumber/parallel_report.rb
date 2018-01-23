@@ -27,11 +27,14 @@ module ReportPortal
         true
       end
 
-      def initialize(_runtime, _path_or_io, _options, desired_time = ReportPortal.now)
+      def initialize
+        @root_node = Tree::TreeNode.new('')
+        @last_used_time ||= 0
+
         if ParallelTests.first_process?
           File.open(FILE_WITH_LAUNCH_ID, 'w') do |f|
             f.flock(File::LOCK_EX)
-            start_launch(desired_time)
+            start_launch
             f.write(ReportPortal.launch_id)
             f.flush
             f.flock(File::LOCK_UN)
@@ -43,9 +46,6 @@ module ReportPortal
             f.flock(File::LOCK_UN)
           end
         end
-
-        @root_node = Tree::TreeNode.new('')
-        @last_used_time ||= 0
       end
 
       def done(desired_time = ReportPortal.now)

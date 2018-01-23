@@ -137,11 +137,11 @@ module ReportPortal
     end
 
     # needed for parallel formatter
-    def item_id_of(item_node)
-      if item_node.parent.is_root?
-        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(item_node.content.name)}&filter.size.path=0"
+    def item_id_of(name, parent_node)
+      if parent_node.is_root? # folder without parent folder
+        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
       else
-        url = "#{Settings.instance.project_url}/item?filter.eq.parent=#{item_node.parent.content.id}&filter.eq.name=#{URI.escape(item_node.content.name)}"
+        url = "#{Settings.instance.project_url}/item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
       do_request(url) do |resource|
         data = JSON.parse(resource.get)
