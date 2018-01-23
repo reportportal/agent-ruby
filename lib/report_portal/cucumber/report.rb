@@ -176,7 +176,7 @@ module ReportPortal
         path_components = feature.location.file.split(File::SEPARATOR)
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
-          unless child_node
+          unless child_node # if child node was not created yet
             if index < path_components.size - 1
               name = "Folder: #{path_component}"
               description = nil
@@ -188,7 +188,11 @@ module ReportPortal
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            if parallel? && index < path_components.size - 1 && (id_of_created_item = ReportPortal.item_id_of(child_node)) # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
+            # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
+            if parallel? &&
+                index < path_components.size - 1 && # is folder?
+                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+              # get child id from other process
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
