@@ -23,7 +23,7 @@ module ReportPortal
   end
 
   class << self
-    attr_accessor :launch_id, :current_scenario
+    attr_accessor :launch_id, :current_scenario, :last_used_time
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -64,9 +64,18 @@ module ReportPortal
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
-      do_request(url) do |resource|
-        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
+      begin
+        url = "item"
+        url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
+        response = resource[url].post(data.to_json, content_type: :json)
+      rescue RestClient::Exception => e
+        if JSON.parse(e.response)['message'][/Start time of child .+ item should be same or later than start time .+ of the parent/]
+          data[:start_time] += 1
+          ReportPortal.last_used_time = data[:start_time]
+          retry
+        end
       end
+      JSON.parse(response)['id']
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
@@ -165,6 +174,13 @@ module ReportPortal
     end
 
     private
+
+    def resource
+      props = { :headers => {:Authorization => "Bearer #{Settings.instance.uuid}"}}
+      verify_ssl = Settings.instance.disable_ssl_verification
+      props[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
+      RestClient::Resource.new(Settings.instance.project_url, props)
+    end
 
     def create_resource(url)
       props = { :headers => {:Authorization => "Bearer #{Settings.instance.uuid}"}}

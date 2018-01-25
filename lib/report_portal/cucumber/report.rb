@@ -19,7 +19,7 @@ module ReportPortal
       end
 
       def initialize
-        @last_used_time = 0
+        ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
         start_launch
       end
@@ -142,10 +142,10 @@ module ReportPortal
       #   * that process/thread can't start the next test until it's done with the previous one
       def time_to_send(desired_time)
         time_to_send = desired_time
-        if time_to_send <= @last_used_time
-          time_to_send = @last_used_time + 1
+        if time_to_send <= ReportPortal.last_used_time
+          time_to_send = ReportPortal.last_used_time + 1
         end
-        @last_used_time = time_to_send
+        ReportPortal.last_used_time = time_to_send
       end
 
       def same_feature_as_previous_test_case?(feature)
