@@ -30,8 +30,9 @@ module ReportPortal
         ENV['REPORT_PORTAL_USED'] = 'true'
 
         @queue = Queue.new
+        start_launch_time = ReportPortal.now
         @thread = Thread.new do
-          @report = ReportPortal::Cucumber::ParallelReport.new
+          @report = ReportPortal::Cucumber::ParallelReport.new(start_launch_time)
           loop do
             method_arr = @queue.pop
             @report.public_send(*method_arr)
