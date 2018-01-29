@@ -40,8 +40,12 @@ module ReportPortal
             f.flock(File::LOCK_UN)
           end
         else
+          start_time = monotonic_time
           loop do
             break if File.exist?(file_with_launch_id)
+            if monotonic_time - start_time > wait_time_for_launch_start
+              raise "File with launch id wasn't created during #{wait_time_for_launch_start} seconds"
+            end
             sleep 0.5
           end
           File.open(file_with_launch_id, 'r') do |f|
@@ -69,6 +73,8 @@ module ReportPortal
         end
       end
 
+      private
+
       def file_with_launch_id
         Pathname(Dir.tmpdir) + "parallel_launch_id_for_#{pid_of_parallel_tests}.lck"
       end
@@ -81,6 +87,14 @@ module ReportPortal
           return current_process.pid if current_process.cmdline[/bin(?:\/|\\)parallel_cucumber/]
           pid = Sys::ProcTable.ps(pid).ppid
         end
+      end
+
+      def wait_time_for_launch_start
+        60
+      end
+
+      def monotonic_time
+        Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
     end
   end

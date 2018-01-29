@@ -23,7 +23,7 @@ gem 'rest-client'
 gem 'rubytree', git: 'https://github.com/razboev/RubyTree'
 gem 'rspec'
 gem 'rake'
-gem 'parallel_tests', '2.15'
+gem 'parallel_tests'
 gem 'sys-proctable'
 
 gem 'logging'
