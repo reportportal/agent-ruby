@@ -204,6 +204,7 @@ module ReportPortal
               item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
+              @logger.debug("Try to start item in RP")
               item.id = ReportPortal.start_item(child_node) # TODO: multithreading
               @logger.debug("Item #{item.id} started")
             end
