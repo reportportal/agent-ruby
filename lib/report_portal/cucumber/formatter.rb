@@ -36,7 +36,11 @@ module ReportPortal
             report.public_send(*method_arr)
           end
         end
-        @thread.abort_on_exception = true
+        if @thread.respond_to?(:report_on_exception)
+          @thread.report_on_exception = true
+        else
+          @thread.abort_on_exception = true
+        end
 
         @io = config.out_stream
 
