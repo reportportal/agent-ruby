@@ -36,7 +36,7 @@ module ReportPortal
             report.public_send(*method_arr)
           end
         end
-        if @thread.respond_to?(:report_on_exception)
+        if @thread.respond_to?(:report_on_exception) # report_on_exception defined only on Ruby 2.4 +
           @thread.report_on_exception = true
         else
           @thread.abort_on_exception = true
