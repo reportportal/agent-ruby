@@ -70,8 +70,10 @@ module ReportPortal
         response = project_resource[url].post(data.to_json)
       rescue RestClient::Exception => e
         response_message = JSON.parse(e.response)['message']
-        raise unless response_message[/Start time of child .+ item should be same or later than start time .+ of the parent/]
-        data[:start_time] += 1
+        m = response_message.match(/Start time of child (.+) item should be same or later than start time \[\'(.+)\'\] of the parent/)
+        raise unless m
+        time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
+        data[:start_time] = (time.to_f * 1000).to_i + 1000
         ReportPortal.last_used_time = data[:start_time]
         retry
       end
