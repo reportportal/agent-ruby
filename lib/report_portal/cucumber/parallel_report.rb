@@ -28,11 +28,12 @@ module ReportPortal
         true
       end
 
-      def initialize(desired_time)
+      def initialize(desired_time, logger)
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
 
         if ParallelTests.first_process?
+          logger.debug('Create launch file')
           File.open(file_with_launch_id, 'w') do |f|
             f.flock(File::LOCK_EX)
             start_launch(desired_time)
@@ -40,20 +41,25 @@ module ReportPortal
             f.flush
             f.flock(File::LOCK_UN)
           end
+          logger.debug('Created launch file')
         else
+          logger.debug('Wait for launch file started')
           start_time = monotonic_time
           loop do
             break if File.exist?(file_with_launch_id)
+            logger.debug('File does not yet exist')
             if monotonic_time - start_time > wait_time_for_launch_start
               raise "File with launch id wasn't created during #{wait_time_for_launch_start} seconds"
             end
-            sleep 0.5
+            sleep 1.5
           end
+          logger.debug('Wait for file to exist finished')
           File.open(file_with_launch_id, 'r') do |f|
             f.flock(File::LOCK_SH)
             ReportPortal.launch_id = f.read
             f.flock(File::LOCK_UN)
           end
+          logger.debug('Launch id was read from the file')
         end
       end
 

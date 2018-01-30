@@ -29,8 +29,10 @@ module ReportPortal
 
         @thread = Thread.new do
           initialize_report
+          logger.debug("Report initialized")
           loop do
             method_arr = queue.pop
+            logger.debug("Handled #{method_arr.first}")
             report.public_send(*method_arr)
           end
         end
@@ -55,6 +57,10 @@ module ReportPortal
 
       def queue
         @queue ||= Queue.new
+      end
+
+      def logger
+        @logger ||= Logger.new("#{ENV['TEST_ENV_NUMBER']}_log_#{Time.now.to_i}.txt")
       end
 
       def initialize_report
