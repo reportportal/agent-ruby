@@ -8,6 +8,7 @@ module ReportPortal
       end
 
       def initialize(desired_time, logger)
+        @logger = logger
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
 
