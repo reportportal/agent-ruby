@@ -31,7 +31,7 @@ module ReportPortal
       private
 
       def initialize_report
-        @report = ReportPortal::Cucumber::ParallelReport.new(@start_launch_time, logger)
+        @report = ReportPortal::Cucumber::ParallelReport.new(@start_launch_time)
       end
     end
   end
