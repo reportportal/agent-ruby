@@ -10,11 +10,12 @@ module ReportPortal
       def initialize(desired_time)
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
+        set_parallel_tests_vars
 
         if ParallelTests.first_process?
           File.open(file_with_launch_id, 'w') do |f|
             f.flock(File::LOCK_EX)
-            start_launch(desired_time)
+            start_launch(desired_time, @cmd_args_of_parallel_tests)
             f.write(ReportPortal.launch_id)
             f.flush
             f.flock(File::LOCK_UN)
@@ -26,7 +27,7 @@ module ReportPortal
             if monotonic_time - start_time > wait_time_for_launch_start
               raise "File with launch id wasn't created during #{wait_time_for_launch_start} seconds"
             end
-            sleep 1.5
+            sleep 0.5
           end
           File.open(file_with_launch_id, 'r') do |f|
             f.flock(File::LOCK_SH)
@@ -56,15 +57,20 @@ module ReportPortal
       private
 
       def file_with_launch_id
-        Pathname(Dir.tmpdir) + "parallel_launch_id_for_#{pid_of_parallel_tests}.lck"
+        Pathname(Dir.tmpdir) + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lck"
       end
 
-      def pid_of_parallel_tests
+      def set_parallel_tests_vars
         pid = Process.pid
         loop do
           current_process = Sys::ProcTable.ps(pid)
-          raise 'Could not get parallel_cucumber in process tree' if current_process.nil?
-          return current_process.pid if current_process.cmdline[/bin(?:\/|\\)parallel_cucumber/]
+          raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if current_process.nil?
+          match = current_process.cmdline.match(/bin(?:\/|\\)parallel_(?:cucumber|test)(.+)/)
+          if match
+            @pid_of_parallel_tests = current_process.pid
+            @cmd_args_of_parallel_tests = match[1].strip.split
+            break
+          end
           pid = Sys::ProcTable.ps(pid).ppid
         end
       end
