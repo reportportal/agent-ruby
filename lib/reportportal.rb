@@ -41,7 +41,7 @@ module ReportPortal
   end
 
   class << self
-    attr_accessor :launch_id, :current_scenario
+    attr_accessor :current_scenario
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -60,16 +60,20 @@ module ReportPortal
       end
     end
 
+    def launch_id
+      ENV['rp_launch_id']
+    end
+
     def start_launch(description, start_time = now)
       url = "#{Settings.instance.project_url}/launch"
       data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
-      @launch_id = do_request(url) do |resource|
+      ENV['rp_launch_id'] = do_request(url) do |resource|
         JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
       end
     end
 
     def finish_launch(end_time = now)
-      url = "#{Settings.instance.project_url}/launch/#{@launch_id}/finish"
+      url = "#{Settings.instance.project_url}/launch/#{launch_id}/finish"
       data = { end_time: end_time }
       do_request(url) do |resource|
         resource.put data.to_json, content_type: :json, &@response_handler
@@ -80,7 +84,7 @@ module ReportPortal
       url = "#{Settings.instance.project_url}/item"
       url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
       item = item_node.content
-      data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
+      data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
       do_request(url) do |resource|
         JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
@@ -139,7 +143,7 @@ module ReportPortal
     # needed for parallel formatter
     def item_id_of(name, parent_node)
       if parent_node.is_root? # folder without parent folder
-        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
+        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
       else
         url = "#{Settings.instance.project_url}/item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
@@ -156,7 +160,7 @@ module ReportPortal
     # needed for parallel formatter
     def close_child_items(parent_id)
       if parent_id.nil?
-        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"
+        url = "#{Settings.instance.project_url}/item?filter.eq.launch=#{launch_id}&filter.size.path=0&page.page=1&page.size=100"
       else
         url = "#{Settings.instance.project_url}/item?filter.eq.parent=#{parent_id}&page.page=1&page.size=100"
       end
