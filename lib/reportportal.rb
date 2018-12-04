@@ -61,6 +61,7 @@ module ReportPortal
     end
 
     def launch_id
+      puts ENV['rp_launch_id']
       ENV['rp_launch_id']
     end
 
