@@ -61,8 +61,7 @@ module ReportPortal
     end
 
     def launch_id
-      File.write('~/agent_log.txt', "[#{DateTime.now.to_s}]  launch_id = #{ENV['rp_launch_id']}", File.size('~/agent_log.txt.txt'), mode: 'a')
-
+      IO.write("/home/ubuntu/ui-tests/rp_agent.log", "gagaga\n", mode: 'a')
       puts ENV['rp_launch_id']
       ENV['rp_launch_id']
     end
