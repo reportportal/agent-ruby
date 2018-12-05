@@ -61,7 +61,7 @@ module ReportPortal
     end
 
     def launch_id
-      path = Dir.exist?('/home/ubuntu') ? '/home/ubuntu/ui-tests/rp_agent.log' : "#{Dir.pwd}/Users/rp_agent.log"
+      path = Dir.exist?('/home/ubuntu') ? '/home/ubuntu/ui-tests/rp_agent.log' : "#{Dir.pwd}/rp_agent.log"
       IO.write(path, "#{ENV['rp_launch_id']}\n", mode: 'a')
       puts ENV['rp_launch_id']
       ENV['rp_launch_id']
