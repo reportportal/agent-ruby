@@ -61,7 +61,7 @@ module ReportPortal
     end
 
     def launch_id
-      IO.write("/home/ubuntu/ui-tests/rp_agent.log", "gagaga\n", mode: 'a')
+      IO.write("/home/ubuntu/ui-tests/rp_agent.log", "#{ENV['rp_launch_id']}\n", mode: 'a')
       puts ENV['rp_launch_id']
       ENV['rp_launch_id']
     end
