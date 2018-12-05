@@ -84,7 +84,7 @@ module ReportPortal
     def start_item(item_node)
       url = "#{Settings.instance.project_url}/item"
       url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
-      p "[RP] Start Item  ==>  #{item_node.content} (id: #{item_node.parent.content.id})"
+      p "[RP] Start Item  ==>  #{item_node.content}"
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
@@ -96,7 +96,6 @@ module ReportPortal
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
       unless item.nil? || item.id.nil? || item.closed
         url = "#{Settings.instance.project_url}/item/#{item.id}"
-
         data = { end_time: end_time.nil? ? now : end_time }
         data[:status] = status unless status.nil?
         p "[RP] Finish Item  ==>  (id: #{item.id}"
