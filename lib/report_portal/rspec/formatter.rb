@@ -39,6 +39,8 @@ module ReportPortal
       end
 
       def start(_start_notification)
+        # cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+        # ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
       end
@@ -102,8 +104,9 @@ module ReportPortal
       end
 
       def example_failed(notification)
-        exception = notification.exception
-        ReportPortal.send_log(:failed, %(#{exception.class}: #{exception.message}\n\nStacktrace: #{notification.formatted_backtrace.join("\n")}), ReportPortal.now)
+        upload_screenshots(notification)
+        log_content = read_log_file_content(notification)
+        ReportPortal.send_log(:failed, log_content, ReportPortal.now)
         ReportPortal.finish_item(ReportPortal.current_scenario, :failed) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
@@ -122,7 +125,28 @@ module ReportPortal
       end
 
       def stop(_notification)
-        ReportPortal.finish_launch
+        # ReportPortal.finish_launch
+      end
+
+      private
+      
+      def read_log_file_content(notification)
+        exception = notification.exception
+        base_log = "#{exception.class}: #{exception.message}\n\nStacktrace: #{notification.formatted_backtrace.join("\n")}"
+        if notification.example.file_path.match('(\w+).rb')
+          file_name = $1
+          file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
+          log_content = IO.read("./log/#{file_name}.log")
+          "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
+        else
+          "example file name did not match [#{notification.example.file_name}]\n\n#{base_log}"
+        end
+      end
+
+      def upload_screenshots(notification)
+        notification.example.metadata[:screenshot].each do |img|
+          ReportPortal.send_file(:failed, "./log/#{img}.jpg")
+        end
       end
     end
   end
