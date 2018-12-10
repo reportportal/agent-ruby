@@ -39,14 +39,13 @@ module ReportPortal
       end
 
       def start(_start_notification)
-        # cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
-        # ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
       end
 
       def example_group_started(group_notification)
         description = group_notification.group.description
+        description = "#{description} (SUBSET = #{ENV['SUBSET']})" unless ENV['SUBSET'].nil?
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
@@ -123,7 +122,7 @@ module ReportPortal
       end
 
       def stop(_notification)
-        # ReportPortal.finish_launch
+        ReportPortal.finish_launch
       end
     end
   end
