@@ -145,7 +145,7 @@ module ReportPortal
 
       def upload_screenshots(notification)
         notification.example.metadata[:screenshot].each do |img|
-          ReportPortal.send_file(:failed, "./log/#{img}.jpg", ReportPortal.now, 'image/jpeg')
+          ReportPortal.send_file(:failed, "./log/#{img}.jpg", nil, ReportPortal.now, 'image/jpeg')
         end
       end
     end
