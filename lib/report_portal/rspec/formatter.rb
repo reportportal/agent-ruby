@@ -19,6 +19,7 @@
 require 'securerandom'
 require 'tree'
 require 'rspec/core'
+require 'fileutils'
 
 require_relative '../../reportportal'
 
@@ -39,8 +40,8 @@ module ReportPortal
       end
 
       def start(_start_notification)
-        # cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
-        # ReportPortal.start_launch(cmd_args)
+        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+        ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
       end
@@ -104,7 +105,9 @@ module ReportPortal
       end
 
       def example_failed(notification)
+        puts "^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         upload_screenshots(notification)
+        puts "^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         log_content = read_log_file_content(notification)
         ReportPortal.send_log(:failed, log_content, ReportPortal.now)
         ReportPortal.finish_item(ReportPortal.current_scenario, :failed) unless ReportPortal.current_scenario.nil?
@@ -125,7 +128,7 @@ module ReportPortal
       end
 
       def stop(_notification)
-        # ReportPortal.finish_launch
+        ReportPortal.finish_launch
       end
 
       private
@@ -145,7 +148,11 @@ module ReportPortal
 
       def upload_screenshots(notification)
         notification.example.metadata[:screenshot].each do |img|
-          ReportPortal.send_file(:failed, "./log/#{img}.jpg", nil, ReportPortal.now, 'image/jpeg')
+          file_name = "./log/#{img}.jpg"
+          new_file_name = "./log/#{SecureRandom.uuid}.jpg"
+          FileUtils.cp(file_name, new_file_name)
+          ReportPortal.send_file(:failed, new_file_name, img, ReportPortal.now, 'image/jpg')
+          File.delete(new_file_name)
         end
       end
     end
