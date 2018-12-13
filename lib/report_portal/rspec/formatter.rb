@@ -53,6 +53,7 @@ module ReportPortal
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
         end
+        tags = ENV['RERUN'].nil? ? [] : ['rerun']
         item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                           :TEST,
                                           nil,
