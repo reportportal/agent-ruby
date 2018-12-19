@@ -140,7 +140,11 @@ module ReportPortal
         if notification.example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
-          log_content = IO.read("./log/#{file_name}.log")
+          begin
+            log_content = IO.read("./log/#{file_name}.log")
+          rescue
+            log_content = IO.read("./log/#{file_name}_rerun.log")
+          end
           "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
         else
           "example file name did not match [#{notification.example.file_name}]\n\n#{base_log}"
