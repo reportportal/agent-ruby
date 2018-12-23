@@ -133,17 +133,21 @@ module ReportPortal
       end
 
       private
-      
+
       def read_log_file_content(notification)
         exception = notification.exception
         base_log = "#{exception.class}: #{exception.message}\n\nStacktrace: #{notification.formatted_backtrace.join("\n")}"
         if notification.example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
-          log_content = if File.exists?("./log/#{file_name}.log")
-                          IO.read("./log/#{file_name}.log")
+          run_log = "./log/#{file_name}_rerun.log"
+          rerun_log = "./log/#{file_name}_rerun.log"
+          log_content = if File.exists?(run_log)
+                          IO.read(run_log)
+                        elsif File.exists?(rerun_log)
+                          IO.read(rerun_log)
                         else
-                          IO.read("./log/#{file_name}_rerun.log")
+                          puts "No log files found!!!\nExpected one of those:\n1: #{run_log}\n2: #{rerun_log}"
                         end
           "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
         else
