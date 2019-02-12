@@ -153,6 +153,8 @@ module ReportPortal
         else
           "example file name did not match [#{notification.example.file_name}]\n\n#{base_log}"
         end
+      rescue => error
+        puts "read_log_file_content failed\n Error: #{error}"
       end
 
       def upload_screenshots(notification)
