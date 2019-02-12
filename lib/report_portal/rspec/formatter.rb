@@ -140,7 +140,7 @@ module ReportPortal
         if notification.example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
-          run_log = "./log/#{file_name}_rerun.log"
+          run_log = "./log/#{file_name}.log"
           rerun_log = "./log/#{file_name}_rerun.log"
           log_content = if File.exists?(run_log)
                           IO.read(run_log)
