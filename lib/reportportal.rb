@@ -26,7 +26,7 @@ require_relative 'report_portal/settings'
 require_relative 'report_portal/patches/rest_client'
 
 module ReportPortal
-  TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
+  TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags, :retry)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
 
   @response_handler = proc do |response, request, result, &block|
@@ -89,7 +89,8 @@ module ReportPortal
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
       do_request(url) do |resource|
-        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
+        response = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
+        [response['id'], response['uniqueId']]
       end
     end
 
