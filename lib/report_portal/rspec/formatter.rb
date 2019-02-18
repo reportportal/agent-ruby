@@ -31,12 +31,15 @@ module ReportPortal
       MAX_DESCRIPTION_LENGTH = 255
       MIN_DESCRIPTION_LENGTH = 3
 
+      @is_rerun = false
+      
       ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
                                                :example_started, :example_passed, :example_failed,
                                                :example_pending, :message, :stop
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
+        @is_rerun = !ENV['RERUN'].nil?
       end
 
       def start(_start_notification)
@@ -53,14 +56,15 @@ module ReportPortal
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
         end
-        tags = ENV['RERUN'].nil? ? [] : ['rerun']
+        tags = @is_rerun ? ['rerun'] : []
         item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                           :TEST,
                                           nil,
                                           ReportPortal.now,
                                           '',
                                           false,
-                                          [])
+                                          [],
+                                          false)
         group_node = Tree::TreeNode.new(SecureRandom.hex, item)
         if group_node.nil?
           p "Group node is nil for item #{item.inspect}"
@@ -90,7 +94,8 @@ module ReportPortal
                                                                    ReportPortal.now,
                                                                    '',
                                                                    false,
-                                                                   [])
+                                                                   [],
+                                                                   @is_rerun)
         example_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
         if example_node.nil?
           p "Example node is nil for scenario #{ReportPortal.current_scenario.inspect}"
