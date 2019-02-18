@@ -89,8 +89,7 @@ module ReportPortal
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
       do_request(url) do |resource|
-        response = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
-        [response['id'], response['uniqueId']]
+        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']      
       end
     end
 
