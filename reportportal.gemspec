@@ -22,7 +22,7 @@ require 'report_portal/version'
 
 Gem::Specification.new do |s|
   s.name                   = 'reportportal'
-  s.version                = ReportPortal::VERSION
+  s.version                = "#{ReportPortal::VERSION}.1"
   s.summary                = 'ReportPortal Ruby Client'
   s.description            = 'Cucumber and RSpec clients for EPAM ReportPortal system'
   s.authors                = ['Aliaksandr Trush', 'Sergey Gvozdyukevich', 'Andrei Botalov']
