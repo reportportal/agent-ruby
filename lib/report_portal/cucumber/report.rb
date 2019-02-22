@@ -10,6 +10,7 @@ module ReportPortal
   module Cucumber
     # @api private
     class Report
+
       def parallel?
         false
       end
@@ -27,16 +28,16 @@ module ReportPortal
       def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
         if attach_to_launch?
           ReportPortal.launch_id =
-            if ReportPortal::Settings.instance.launch_id
-              ReportPortal::Settings.instance.launch_id
-            else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
-              File.read(file_path)
-            end
+              if ReportPortal::Settings.instance.launch_id
+                ReportPortal::Settings.instance.launch_id
+              else
+                file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+                File.read(file_path)
+              end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           description = ReportPortal::Settings.instance.description
-          description ||= cmd_args.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
+          description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
           ReportPortal.start_launch(description, time_to_send(desired_time))
         end
       end
@@ -80,7 +81,7 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
+            message << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
@@ -102,7 +103,7 @@ module ReportPortal
         end
 
         if status != :passed
-          log_level = (status == :skipped)? :warn : :error
+          log_level = (status == :skipped) ? :warn : :error
           step_type = if step?(test_step)
                         'Step'
                       else
@@ -129,7 +130,7 @@ module ReportPortal
       end
 
       def embed(src, mime_type, label, desired_time = ReportPortal.now)
-        ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
       private
@@ -165,8 +166,9 @@ module ReportPortal
               tags = []
               type = :SUITE
             else
+              # TODO: Consider adding feature description and comments.
               name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file # TODO: consider adding feature description and comments
+              description = feature.file
               tags = feature.tags.map(&:name)
               type = :TEST
             end
@@ -182,7 +184,7 @@ module ReportPortal
               item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
-              item.id = ReportPortal.start_item(child_node) # TODO: multithreading
+              item.id = ReportPortal.start_item(child_node)
             end
           end
           parent_node = child_node
