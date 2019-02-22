@@ -125,7 +125,7 @@ module ReportPortal
       if parent_node.is_root? # folder without parent folder
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
       else
-        url = "item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
+        url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
       data = JSON.parse(project_resource[url].get)
       if data.key? 'content'
@@ -140,7 +140,7 @@ module ReportPortal
       if parent_id.nil?
         url = "item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"
       else
-        url = "item?filter.eq.parent=#{parent_id}&page.page=1&page.size=100"
+        url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_id}&page.page=1&page.size=100"
       end
       ids = []
       loop do
