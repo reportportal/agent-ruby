@@ -172,11 +172,32 @@ module ReportPortal
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-            if parallel? &&
-                index < path_components.size - 1 && # is folder?
-                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
-              # get child id from other process
+            is_created = false
+            if parallel? && name.include?("Folder:")
+              folder_name = name.gsub("Folder: ", "")
+              $folder_creation_tracking_file = ".reportportal/folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+              File.open($folder_creation_tracking_file, 'r+') do |f|
+                f.flock(File::LOCK_SH)
+                report_portal_folders = f.read
+                if report_portal_folders
+                  report_portal_folders_array = report_portal_folders.split(/\n/)
+                  if report_portal_folders_array.include?(folder_name)
+                    is_created = true
+                  end
+                end
+                f.flock(File::LOCK_UN)
+              end
+              unless is_created
+                File.open($folder_creation_tracking_file, 'a') do |f|
+                  f.flock(File::LOCK_EX)
+                  f.write("\n#{folder_name}")
+                  f.flush
+                  f.flock(File::LOCK_UN)
+                end
+              end
+            end
+            if parallel? && index < path_components.size - 1 && is_created
+              id_of_created_item = ReportPortal.item_id_of(name, parent_node)
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
