@@ -65,6 +65,8 @@ module ReportPortal
             ReportPortal.launch_id = f.read
             f.flock(File::LOCK_UN)
           end
+          sleep_time = ENV['TEST_ENV_NUMBER'].to_i
+          sleep(ENV['TEST_ENV_NUMBER'].to_i)
         end
       end
 
