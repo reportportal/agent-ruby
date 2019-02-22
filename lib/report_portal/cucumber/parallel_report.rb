@@ -11,7 +11,6 @@ module ReportPortal
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
-
         if ParallelTests.first_process?
           File.open(file_with_launch_id, 'w') do |f|
             f.flock(File::LOCK_EX)
@@ -25,7 +24,7 @@ module ReportPortal
           loop do
             break if File.exist?(file_with_launch_id)
             if monotonic_time - start_time > wait_time_for_launch_start
-              raise "File with launch id wasn't created during #{wait_time_for_launch_start} seconds"
+              raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_start} seconds"
             end
             sleep 0.5
           end
