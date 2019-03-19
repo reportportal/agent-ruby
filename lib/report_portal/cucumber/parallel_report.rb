@@ -25,7 +25,7 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-      $folder_creation_tracking_file = ".reportportal/folder_creation_tracking.lck"
+      $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
 
       def parallel?
         true
@@ -43,9 +43,8 @@ module ReportPortal
             f.flush
             f.flock(File::LOCK_UN)
           end
-          $folder_creation_tracking_file = ".reportportal/folder_creation_tracking_#{ReportPortal.launch_id}.lck"
-          FileUtils.mkdir_p('.reportportal')
-          File.open($folder_creation_tracking_file, 'w') do |f|
+          $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+          File.open($folder_creation_tracking_file, 'w+') do |f|
             f.flock(File::LOCK_EX)
             f.flush
             f.flock(File::LOCK_UN)

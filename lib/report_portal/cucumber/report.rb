@@ -193,7 +193,7 @@ module ReportPortal
             is_created = false
             if parallel? && name.include?("Folder:")
               folder_name = name.gsub("Folder: ", "")
-              $folder_creation_tracking_file = ".reportportal/folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+              $folder_creation_tracking_file = (Pathname(Dir.tmpdir)) + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
               File.open($folder_creation_tracking_file, 'r+') do |f|
                 f.flock(File::LOCK_SH)
                 report_portal_folders = f.read
