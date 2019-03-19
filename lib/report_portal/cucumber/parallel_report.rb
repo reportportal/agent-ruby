@@ -34,7 +34,7 @@ module ReportPortal
             f.flock(File::LOCK_UN)
           end
           sleep_time = ENV['TEST_ENV_NUMBER'].to_i
-          sleep(ENV['TEST_ENV_NUMBER'].to_i)
+          sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
         end
       end
 
