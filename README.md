@@ -1,8 +1,26 @@
 # Ruby Cucumber and RSpec formatters for ReportPortal
 
+ [Download](https://rubygems.org/gems/reportportal)
+ 
+[![Join Slack chat!](https://reportportal-slack-auto.herokuapp.com/badge.svg)](https://reportportal-slack-auto.herokuapp.com)
+[![stackoverflow](https://img.shields.io/badge/reportportal-stackoverflow-orange.svg?style=flat)](http://stackoverflow.com/questions/tagged/reportportal)
+[![UserVoice](https://img.shields.io/badge/uservoice-vote%20ideas-orange.svg?style=flat)](https://rpp.uservoice.com/forums/247117-report-portal)
+[![Build with Love](https://img.shields.io/badge/build%20with-❤%EF%B8%8F%E2%80%8D-lightgrey.svg)](http://reportportal.io?style=flat)
+
+
 ## Installation
 
 Use Ruby 2.2+
+
+**Rubygems**
+
+From https://rubygems.org
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gem install reportportal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+or
 
 Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` to your `Gemfile`. Run `bundle install`.
 
