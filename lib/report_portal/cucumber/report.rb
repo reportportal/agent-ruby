@@ -28,6 +28,7 @@ module ReportPortal
   module Cucumber
     # @api private
     class Report
+
       def parallel?
         false
       end
@@ -45,16 +46,16 @@ module ReportPortal
       def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
         if attach_to_launch?
           ReportPortal.launch_id =
-            if ReportPortal::Settings.instance.launch_id
-              ReportPortal::Settings.instance.launch_id
-            else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
-              File.read(file_path)
-            end
+              if ReportPortal::Settings.instance.launch_id
+                ReportPortal::Settings.instance.launch_id
+              else
+                file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+                File.read(file_path)
+              end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           description = ReportPortal::Settings.instance.description
-          description ||= cmd_args.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
+          description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
           ReportPortal.start_launch(description, time_to_send(desired_time))
         end
       end
@@ -98,7 +99,7 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
+            message << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
@@ -120,7 +121,7 @@ module ReportPortal
         end
 
         if status != :passed
-          log_level = (status == :skipped)? :warn : :error
+          log_level = (status == :skipped) ? :warn : :error
           step_type = if step?(test_step)
                         'Step'
                       else
@@ -147,7 +148,7 @@ module ReportPortal
       end
 
       def embed(src, mime_type, label, desired_time = ReportPortal.now)
-        ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
       private
@@ -174,6 +175,7 @@ module ReportPortal
         parent_node = @root_node
         child_node = nil
         path_components = feature.location.file.split(File::SEPARATOR)
+        path_components_no_feature = feature.location.file.split(File::SEPARATOR)[0...path_components.size - 1]
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node # if child node was not created yet
@@ -183,16 +185,45 @@ module ReportPortal
               tags = []
               type = :SUITE
             else
+              # TODO: Consider adding feature description and comments.
               name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file # TODO: consider adding feature description and comments
+              description = feature.file
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-            if parallel? &&
-                index < path_components.size - 1 && # is folder?
-                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
-              # get child id from other process
+            is_created = false
+            if parallel? && name.include?("Folder:")
+              folder_name = name.gsub("Folder: ", "")
+              folder_name_for_tracker = "./#{folder_name}" # create a full path file name to use for tracking
+              if index > 0
+                folder_name_for_tracker = "./"
+                for path_index in (0...path_components_no_feature.length)
+                  folder_name_for_tracker += "#{path_components_no_feature[path_index]}/"
+                end
+              end
+              $folder_creation_tracking_file = (Pathname(Dir.tmpdir)) + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+              File.open($folder_creation_tracking_file, 'r+') do |f|
+                f.flock(File::LOCK_SH)
+                report_portal_folders = f.read
+                if report_portal_folders
+                  report_portal_folders_array = report_portal_folders.split(/\n/)
+                  if report_portal_folders_array.include?(folder_name_for_tracker)
+                    is_created = true
+                  end
+                end
+                f.flock(File::LOCK_UN)
+              end
+              unless is_created
+                File.open($folder_creation_tracking_file, 'a') do |f|
+                  f.flock(File::LOCK_EX)
+                  f.write("\n#{folder_name_for_tracker}")
+                  f.flush
+                  f.flock(File::LOCK_UN)
+                end
+              end
+            end
+            if parallel? && index < path_components.size - 1 && is_created
+              id_of_created_item = ReportPortal.item_id_of(name, parent_node)
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
@@ -200,7 +231,7 @@ module ReportPortal
               item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
-              item.id = ReportPortal.start_item(child_node) # TODO: multithreading
+              item.id = ReportPortal.start_item(child_node)
             end
           end
           parent_node = child_node

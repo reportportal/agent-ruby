@@ -18,12 +18,15 @@
 
 require 'parallel_tests'
 require 'sys/proctable'
+require 'fileutils'
 
 require_relative 'report'
 
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
+      $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
+
       def parallel?
         true
       end
@@ -32,7 +35,6 @@ module ReportPortal
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
-
         if ParallelTests.first_process?
           File.open(file_with_launch_id, 'w') do |f|
             f.flock(File::LOCK_EX)
@@ -41,12 +43,18 @@ module ReportPortal
             f.flush
             f.flock(File::LOCK_UN)
           end
+          $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+          File.open($folder_creation_tracking_file, 'w+') do |f|
+            f.flock(File::LOCK_EX)
+            f.flush
+            f.flock(File::LOCK_UN)
+          end
         else
           start_time = monotonic_time
           loop do
             break if File.exist?(file_with_launch_id)
             if monotonic_time - start_time > wait_time_for_launch_start
-              raise "File with launch id wasn't created during #{wait_time_for_launch_start} seconds"
+              raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_start} seconds"
             end
             sleep 0.5
           end
@@ -55,6 +63,8 @@ module ReportPortal
             ReportPortal.launch_id = f.read
             f.flock(File::LOCK_UN)
           end
+          sleep_time = ENV['TEST_ENV_NUMBER'].to_i
+          sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
         end
       end
 
