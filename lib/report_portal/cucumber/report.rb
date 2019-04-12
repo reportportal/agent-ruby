@@ -29,6 +29,8 @@ module ReportPortal
     # @api private
     class Report
 
+      @folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
+
       def parallel?
         false
       end
@@ -201,8 +203,8 @@ module ReportPortal
                   folder_name_for_tracker += "#{path_components_no_feature[path_index]}/"
                 end
               end
-              $folder_creation_tracking_file = (Pathname(Dir.tmpdir)) + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
-              File.open($folder_creation_tracking_file, 'r+') do |f|
+              @folder_creation_tracking_file = (Pathname(Dir.tmpdir)) + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
+              File.open(@folder_creation_tracking_file, 'r+') do |f|
                 f.flock(File::LOCK_SH)
                 report_portal_folders = f.read
                 if report_portal_folders
@@ -214,7 +216,7 @@ module ReportPortal
                 f.flock(File::LOCK_UN)
               end
               unless is_created
-                File.open($folder_creation_tracking_file, 'a') do |f|
+                File.open(@folder_creation_tracking_file, 'a') do |f|
                   f.flock(File::LOCK_EX)
                   f.write("\n#{folder_name_for_tracker}")
                   f.flush
