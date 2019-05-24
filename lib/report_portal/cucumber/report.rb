@@ -28,19 +28,53 @@ module ReportPortal
       end
 
       def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
+        # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
+        #
+        # Expected behavior that make sense:
+        #  1. If launch_id present attach to existing (simple use case)
+        #  2. If launch_id not present check if exist rp_launch_id.tmp
+        #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
               if ReportPortal::Settings.instance.launch_id
                 ReportPortal::Settings.instance.launch_id
               else
-                file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
-                File.read(file_path)
+                file_path = lock_file
+                if File.file?(file_path)
+                  File.read(file_path)
+                else
+                  new_launch(desired_time, cmd_args, file_path)
+                end
               end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+
         else
-          description = ReportPortal::Settings.instance.description
-          description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
-          ReportPortal.start_launch(description, time_to_send(desired_time))
+          new_launch(desired_time, cmd_args)
+        end
+      end
+
+      def lock_file
+        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
+        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= tmp_dir + 'rp_launch_id.tmp'
+        file_path
+      end
+
+      def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
+        description = ReportPortal::Settings.instance.description
+        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
+        ReportPortal.start_launch(description, time_to_send(desired_time))
+        set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
+        ReportPortal.launch_id
+      end
+
+      def set_file_lock_with_launch_id(lock_file, launch_id)
+        FileUtils.mkdir_p lock_file.dirname
+        File.open(lock_file, 'w') do |f|
+          f.flock(File::LOCK_EX)
+          f.write(launch_id)
+          f.flush
+          f.flock(File::LOCK_UN)
         end
       end
 
@@ -149,6 +183,10 @@ module ReportPortal
           time_to_send = ReportPortal.last_used_time + 1
         end
         ReportPortal.last_used_time = time_to_send
+      end
+
+      def tmp_dir
+        Pathname(ENV['TMPDIR'] ? ENV['TMPDIR'] : Dir.tmpdir)
       end
 
       def same_feature_as_previous_test_case?(feature)
