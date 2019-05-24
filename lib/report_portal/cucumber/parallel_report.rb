@@ -25,7 +25,6 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-      $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
 
       def parallel?
         true
@@ -36,32 +35,18 @@ module ReportPortal
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
         if ParallelTests.first_process?
-          File.open(file_with_launch_id, 'w') do |f|
-            f.flock(File::LOCK_EX)
-            start_launch(desired_time, @cmd_args_of_parallel_tests)
-            f.write(ReportPortal.launch_id)
-            f.flush
-            f.flock(File::LOCK_UN)
-          end
-          $folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
-          File.open($folder_creation_tracking_file, 'w+') do |f|
-            f.flock(File::LOCK_EX)
-            f.flush
-            f.flock(File::LOCK_UN)
-          end
+          start_launch(desired_time)
         else
           start_time = monotonic_time
           loop do
-            break if File.exist?(file_with_launch_id)
+            break if File.exist?(lock_file)
             if monotonic_time - start_time > wait_time_for_launch_start
               raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_start} seconds"
             end
             sleep 0.5
           end
-          File.open(file_with_launch_id, 'r') do |f|
-            f.flock(File::LOCK_SH)
+          File.open(lock_file, 'r') do |f|
             ReportPortal.launch_id = f.read
-            f.flock(File::LOCK_UN)
           end
           sleep_time = ENV['TEST_ENV_NUMBER'].to_i
           sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
@@ -74,7 +59,7 @@ module ReportPortal
         if ParallelTests.first_process?
           ParallelTests.wait_for_other_processes_to_finish
 
-          File.delete(file_with_launch_id)
+          File.delete(lock_file)
 
           unless attach_to_launch?
             $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
@@ -85,11 +70,12 @@ module ReportPortal
         end
       end
 
-      private
-
-      def file_with_launch_id
-        Pathname(Dir.tmpdir) + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lck"
+      def lock_file
+        file_path ||= tmp_dir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
+        super
       end
+      
+      private
 
       def set_parallel_tests_vars
         pid = Process.pid
@@ -106,8 +92,9 @@ module ReportPortal
         end
       end
 
+      #time required for first tread to created remote project in RP and save id to file
       def wait_time_for_launch_start
-        60
+        ENV['rp_parallel_launch_wait_time'] ? ENV['rp_parallel_launch_wait_time'] : 60
       end
 
       def monotonic_time

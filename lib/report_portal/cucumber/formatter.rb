@@ -25,7 +25,6 @@ module ReportPortal
     class Formatter
       # @api private
       def initialize(config)
-        ENV['REPORT_PORTAL_USED'] = 'true'
 
         @thread = Thread.new do
           initialize_report
@@ -47,7 +46,7 @@ module ReportPortal
 
       def puts(message)
         queue.push([:puts, message, ReportPortal.now])
-        @io.puts(message)
+        # @io.puts(message)
         @io.flush
       end
 
