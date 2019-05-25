@@ -17,12 +17,14 @@
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'thread'
+require 'cucumber/formatter/io'
 
 require_relative 'report'
 
 module ReportPortal
   module Cucumber
     class Formatter
+      include ::Cucumber::Formatter::Io
       # @api private
       def initialize(config)
 
@@ -38,16 +40,16 @@ module ReportPortal
         else
           @thread.abort_on_exception = true
         end
-
-        @io = config.out_stream
-
+        @io = ensure_io(config.out_stream)
         handle_cucumber_events(config)
       end
 
       def puts(message)
         queue.push([:puts, message, ReportPortal.now])
-        # @io.puts(message)
-        @io.flush
+        unless  @io.class.eql?(File)
+          @io.puts(message)
+          @io.flush
+        end
       end
 
       def embed(*args)

@@ -48,9 +48,16 @@ module ReportPortal
           File.open(lock_file, 'r') do |f|
             ReportPortal.launch_id = f.read
           end
-          sleep_time = ENV['TEST_ENV_NUMBER'].to_i
+          add_process_description
+          sleep_time = 5
           sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
         end
+      end
+      
+      def add_process_description
+        description = ReportPortal.get_launch['description'].split(' ')
+        description.push(self.description().split(' '))
+        ReportPortal.update_launch({description: description.join(' ')})
       end
 
       def done(desired_time = ReportPortal.now)
@@ -72,7 +79,10 @@ module ReportPortal
 
       def lock_file
         file_path ||= tmp_dir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
-        super
+        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
+        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= tmp_dir + 'rp_launch_id.tmp'
+        file_path
       end
       
       private
@@ -81,6 +91,11 @@ module ReportPortal
         pid = Process.pid
         loop do
           current_process = Sys::ProcTable.ps(pid)
+          #TODO: add exception to fall back to cucumber process 
+          # 1. if rm_launch_uuid was created by some other parallel script that executes cucumber batch of feature files
+          # 2. if fallback to cucumber process, this allows to use same formatter sequential and parallel executions
+          # useful when formatters are default configured in AfterConfiguration hook 
+          # config.formats.push(["ReportPortal::Cucumber::ParallelFormatter", {}, set_up_output_format(report_name, :report_portal)])
           raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if current_process.nil?
           match = current_process.cmdline.match(/bin(?:\/|\\)parallel_(?:cucumber|test)(.+)/)
           if match

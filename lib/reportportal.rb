@@ -55,6 +55,15 @@ module ReportPortal
       @launch_id = JSON.parse(response)['id']
     end
 
+    def get_launch()
+      response = project_resource["launch/#{@launch_id}"].get
+      JSON.parse(response)
+    end
+
+    def update_launch(data)
+      project_resource["launch/#{@launch_id}/update"].put(data.to_json)
+    end
+
     def finish_launch(end_time = now)
       data = { end_time: end_time }
       project_resource["launch/#{@launch_id}/finish"].put(data.to_json)
