@@ -11,8 +11,6 @@ module ReportPortal
     # @api private
     class Report
 
-      @folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
-
       def parallel?
         false
       end
@@ -61,11 +59,15 @@ module ReportPortal
       end
 
       def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
-        description = ReportPortal::Settings.instance.description
-        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
-        ReportPortal.start_launch(description, time_to_send(desired_time))
+        ReportPortal.start_launch(description(cmd_args), time_to_send(desired_time))
         set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
         ReportPortal.launch_id
+      end
+
+      def description(cmd_args=ARGV)
+        description ||= ReportPortal::Settings.instance.description
+        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
+        description
       end
 
       def set_file_lock_with_launch_id(lock_file, launch_id)
@@ -213,39 +215,10 @@ module ReportPortal
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            is_created = false
-            if parallel? && name.include?("Folder:")
-              folder_name = name.gsub("Folder: ", "")
-              folder_name_for_tracker = "./#{folder_name}" # create a full path file name to use for tracking
-              if index > 0
-                folder_name_for_tracker = "./"
-                for path_index in (0...path_components_no_feature.length)
-                  folder_name_for_tracker += "#{path_components_no_feature[path_index]}/"
-                end
-              end
-              @folder_creation_tracking_file = (Pathname(Dir.tmpdir)) + "folder_creation_tracking_#{ReportPortal.launch_id}.lck"
-              File.open(@folder_creation_tracking_file, 'r+') do |f|
-                f.flock(File::LOCK_SH)
-                report_portal_folders = f.read
-                if report_portal_folders
-                  report_portal_folders_array = report_portal_folders.split(/\n/)
-                  if report_portal_folders_array.include?(folder_name_for_tracker)
-                    is_created = true
-                  end
-                end
-                f.flock(File::LOCK_UN)
-              end
-              unless is_created
-                File.open(@folder_creation_tracking_file, 'a') do |f|
-                  f.flock(File::LOCK_EX)
-                  f.write("\n#{folder_name_for_tracker}")
-                  f.flush
-                  f.flock(File::LOCK_UN)
-                end
-              end
-            end
-            if parallel? && index < path_components.size - 1 && is_created
-              id_of_created_item = ReportPortal.item_id_of(name, parent_node)
+            if parallel? &&
+                index < path_components.size - 1 && # is folder?
+                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+              # get child id from other process
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node

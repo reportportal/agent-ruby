@@ -1,17 +1,18 @@
 require 'thread'
+require 'cucumber/formatter/io'
 
 require_relative 'report'
 
 module ReportPortal
   module Cucumber
     class Formatter
+      include ::Cucumber::Formatter::Io
       # @api private
       def initialize(config)
-        ENV['REPORT_PORTAL_USED'] = 'true'
 
         setup_message_processing
 
-        @io = config.out_stream
+        @io = ensure_io(config.out_stream)
 
         [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished, :test_run_finished].each do |event_name|
           config.on_event event_name do |event|
