@@ -29,6 +29,8 @@ module ReportPortal
     # @api private
     class Report
 
+      @folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
+
       def parallel?
         false
       end
@@ -237,6 +239,7 @@ module ReportPortal
                 index < path_components.size - 1 && # is folder?
                 (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
+
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
