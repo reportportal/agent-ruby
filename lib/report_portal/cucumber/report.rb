@@ -28,6 +28,9 @@ module ReportPortal
   module Cucumber
     # @api private
     class Report
+
+      @folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
+
       def parallel?
         false
       end
@@ -37,25 +40,63 @@ module ReportPortal
       end
 
       def initialize
-        @last_used_time = 0
+        ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
         start_launch
       end
 
-      def start_launch(desired_time = ReportPortal.now)
+      def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
+        # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
+        #
+        # Expected behavior that make sense:
+        #  1. If launch_id present attach to existing (simple use case)
+        #  2. If launch_id not present check if exist rp_launch_id.tmp
+        #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
-            if ReportPortal::Settings.instance.launch_id
-              ReportPortal::Settings.instance.launch_id
-            else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
-              File.read(file_path)
-            end
+              if ReportPortal::Settings.instance.launch_id
+                ReportPortal::Settings.instance.launch_id
+              else
+                file_path = lock_file
+                if File.file?(file_path)
+                  File.read(file_path)
+                else
+                  new_launch(desired_time, cmd_args, file_path)
+                end
+              end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+
         else
-          description = ReportPortal::Settings.instance.description
-          description ||= ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
-          ReportPortal.start_launch(description, time_to_send(desired_time))
+          new_launch(desired_time, cmd_args)
+        end
+      end
+
+      def lock_file
+        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
+        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= tmp_dir + 'rp_launch_id.tmp'
+        file_path
+      end
+
+      def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
+        ReportPortal.start_launch(description(cmd_args), time_to_send(desired_time))
+        set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
+        ReportPortal.launch_id
+      end
+      
+      def description(cmd_args=ARGV)
+        description ||= ReportPortal::Settings.instance.description
+        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
+        description
+      end
+
+      def set_file_lock_with_launch_id(lock_file, launch_id)
+        FileUtils.mkdir_p lock_file.dirname
+        File.open(lock_file, 'w') do |f|
+          f.flock(File::LOCK_EX)
+          f.write(launch_id)
+          f.flush
+          f.flock(File::LOCK_UN)
         end
       end
 
@@ -98,7 +139,7 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
+            message << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
@@ -120,7 +161,7 @@ module ReportPortal
         end
 
         if status != :passed
-          log_level = (status == :skipped)? :warn : :error
+          log_level = (status == :skipped) ? :warn : :error
           step_type = if step?(test_step)
                         'Step'
                       else
@@ -147,7 +188,7 @@ module ReportPortal
       end
 
       def embed(src, mime_type, label, desired_time = ReportPortal.now)
-        ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
       private
@@ -160,10 +201,14 @@ module ReportPortal
       #   * that process/thread can't start the next test until it's done with the previous one
       def time_to_send(desired_time)
         time_to_send = desired_time
-        if time_to_send <= @last_used_time
-          time_to_send = @last_used_time + 1
+        if time_to_send <= ReportPortal.last_used_time
+          time_to_send = ReportPortal.last_used_time + 1
         end
-        @last_used_time = time_to_send
+        ReportPortal.last_used_time = time_to_send
+      end
+
+      def tmp_dir
+        Pathname(ENV['TMPDIR'] ? ENV['TMPDIR'] : Dir.tmpdir)
       end
 
       def same_feature_as_previous_test_case?(feature)
@@ -174,6 +219,7 @@ module ReportPortal
         parent_node = @root_node
         child_node = nil
         path_components = feature.location.file.split(File::SEPARATOR)
+        path_components_no_feature = feature.location.file.split(File::SEPARATOR)[0...path_components.size - 1]
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node # if child node was not created yet
@@ -183,16 +229,17 @@ module ReportPortal
               tags = []
               type = :SUITE
             else
+              # TODO: Consider adding feature description and comments.
               name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file # TODO: consider adding feature description and comments
+              description = feature.file
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
             if parallel? &&
                 index < path_components.size - 1 && # is folder?
                 (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
+
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
@@ -200,7 +247,7 @@ module ReportPortal
               item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
-              item.id = ReportPortal.start_item(child_node) # TODO: multithreading
+              item.id = ReportPortal.start_item(child_node)
             end
           end
           parent_node = child_node
