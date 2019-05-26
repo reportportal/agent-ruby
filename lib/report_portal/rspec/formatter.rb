@@ -1,18 +1,18 @@
 # Copyright 2015 EPAM Systems
-# 
-# 
+#
+#
 # This file is part of Report Portal.
-# 
+#
 # Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public License
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -32,7 +32,7 @@ module ReportPortal
       MIN_DESCRIPTION_LENGTH = 3
 
       @is_rerun = false
-      
+
       ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
                                                :example_started, :example_passed, :example_failed,
                                                :example_pending, :message, :stop
@@ -52,18 +52,19 @@ module ReportPortal
       def example_group_started(group_notification)
         description = group_notification.group.description
         description = "#{description} (SUBSET = #{ENV['SUBSET']})" unless ENV['SUBSET'].nil?
+        description += ' (SEQUENTAIL)' unless ENV['SEQ'].nil?
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
         end
-        tags = @is_rerun ? ['rerun'] : []
+        tags = []
         item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                           :TEST,
                                           nil,
                                           ReportPortal.now,
                                           '',
                                           false,
-                                          [],
+                                          tags,
                                           false)
         group_node = Tree::TreeNode.new(SecureRandom.hex, item)
         if group_node.nil?
