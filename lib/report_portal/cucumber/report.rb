@@ -71,7 +71,7 @@ module ReportPortal
         end
       end
 
-      def lock_file
+      def lock_file(file_path = nil)
         file_path ||= ReportPortal::Settings.instance.file_with_launch_id
         file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
         file_path ||= tmp_dir + 'rp_launch_id.tmp'

@@ -53,11 +53,11 @@ module ReportPortal
           sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
         end
       end
-      
+
       def add_process_description
         description = ReportPortal.get_launch['description'].split(' ')
-        description.push(self.description().split(' '))
-        ReportPortal.update_launch({description: description.join(' ')})
+        description.push(self.description().split(' ').strip)
+        ReportPortal.update_launch({description: description.uniq.join(' ')})
       end
 
       def done(desired_time = ReportPortal.now)
@@ -68,8 +68,9 @@ module ReportPortal
 
           File.delete(lock_file)
 
-          unless attach_to_launch?
-            $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
+          # TODO: if parallel test does not need to finish launch, there should be env variable to support this.
+          #  as report launch is is created by first process it should also be finished by same process
+          unless ReportPortal::Settings.instance.file_with_launch_id
             ReportPortal.close_child_items(nil)
             time_to_send = time_to_send(desired_time)
             ReportPortal.finish_launch(time_to_send)
@@ -77,14 +78,11 @@ module ReportPortal
         end
       end
 
-      def lock_file
+      def lock_file(file_path = nil)
         file_path ||= tmp_dir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
-        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
-        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
-        file_path ||= tmp_dir + 'rp_launch_id.tmp'
-        file_path
+        super(file_path)
       end
-      
+
       private
 
       def set_parallel_tests_vars
