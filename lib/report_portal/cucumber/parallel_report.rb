@@ -34,7 +34,7 @@ module ReportPortal
 
       def add_process_description
         description = ReportPortal.get_launch['description'].split(' ')
-        description.push(self.description().split(' ').strip)
+        description.push(self.description().split(' ')).flatten!
         ReportPortal.update_launch({description: description.uniq.join(' ')})
       end
 
