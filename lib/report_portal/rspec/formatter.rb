@@ -101,7 +101,6 @@ module ReportPortal
       def example_started(notification)
         is_rerun = !ENV['RERUN'].nil?
         description = notification.description
-
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Example description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('notification': #{notification.inspect})"
           return
@@ -130,6 +129,7 @@ module ReportPortal
       end
 
       def example_failed(notification)
+        # TODO: Get Item object + Do not report to RP + Raise 'rerun' flag
         puts "^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         upload_screenshots(notification)
         puts "^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
