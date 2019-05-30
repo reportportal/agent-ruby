@@ -22,8 +22,6 @@ require 'rspec/core'
 require 'fileutils'
 require_relative '../../reportportal'
 
-# TODO: Screenshots
-# TODO: Logs
 module ReportPortal
   module RSpec
     class Formatter
@@ -160,10 +158,10 @@ module ReportPortal
 
       private
 
-      def read_log_file_content(notification)
-        exception = notification.exception
-        base_log = "#{exception.class}: #{exception.message}\n\nStacktrace: #{notification.formatted_backtrace.join("\n")}"
-        if notification.example.file_path.match('(\w+).rb')
+      def read_log_file_content(example)
+        exception = example.exception
+        base_log = "#{exception.class}: #{exception.message}\n\nBacktrace: #{exception.backtrace.join("\n")}"
+        if example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
           run_log = "./log/#{file_name}.log"
@@ -173,18 +171,18 @@ module ReportPortal
                         elsif File.exists?(rerun_log)
                           IO.read(rerun_log)
                         else
-                          puts "No log files found!!!\nExpected one of those:\n1: #{run_log}\n2: #{rerun_log}"
+                          puts "No log files found!!!\nExpected one of these:\n1: #{run_log}\n2: #{rerun_log}"
                         end
           "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
         else
-          "example file name did not match [#{notification.example.file_name}]\n\n#{base_log}"
+          "example file name did not match [#{example.file_name}]\n\n#{base_log}"
         end
       rescue => error
         puts "read_log_file_content failed\n Error: #{error}"
       end
 
-      def upload_screenshots(example)
-        example.metadata[:screenshot].each do |img|
+      def upload_screenshots(notification)
+        notification.metadata[:screenshot].each do |img|
           file_name = "./log/#{img}.jpg"
           new_file_name = "./log/#{SecureRandom.uuid}.jpg"
           FileUtils.cp(file_name, new_file_name)
