@@ -129,7 +129,6 @@ module ReportPortal
       end
 
       def example_failed(notification)
-        # TODO: Get Item object + Do not report to RP + Raise 'rerun' flag
         puts "^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         upload_screenshots(notification)
         puts "^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
