@@ -20,7 +20,6 @@ require 'securerandom'
 require 'tree'
 require 'rspec/core'
 require 'fileutils'
-
 require_relative '../../reportportal'
 
 # TODO: Screenshots
@@ -31,28 +30,46 @@ module ReportPortal
       MAX_DESCRIPTION_LENGTH = 255
       MIN_DESCRIPTION_LENGTH = 3
 
-      @is_rerun = false
-
-      ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
-                                               :example_started, :example_passed, :example_failed,
-                                               :example_pending, :message, :stop
+      ::RSpec::Core::Formatters.register self, :dump_summary, :start
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
-        @is_rerun = !ENV['RERUN'].nil?
       end
 
       def start(_start_notification)
-        # cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
-        # ReportPortal.start_launch(cmd_args)
+        # ReportPortal.start_launch('OMRI-TEST-111')
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
       end
 
+      def dump_summary(notification)
+        return unless should_report?(notification)  # Report to RP only if no failures OR if rerun
+        example_group_started(notification.examples.first.example_group)
+        notification.examples.each do |example|
+          example_started(example)
+          case example.execution_result.status
+          when :passed
+            example_passed(example)
+          when :failed
+            example_failed(example)
+          when :pending
+            example_pending(example)
+          end
+        end
+        example_group_finished(notification.examples.first.example_group)
+        # stop(nil)
+      end
+
+      def should_report?(notification)
+        failed = notification.examples.select { |example| example.execution_result.status == :failed }
+        is_rerun = !ENV['RERUN'].nil?
+        failed == 0 || is_rerun
+      end
+
       def example_group_started(group_notification)
-        description = group_notification.group.description
-        description = "#{description} (SUBSET = #{ENV['SUBSET']})" unless ENV['SUBSET'].nil?
-        description += ' (SEQUENTAIL)' unless ENV['SEQ'].nil?
+        description = group_notification.description
+        description = "#{description} (SUBSET = #{ENV['SUBSET']})" if ENV['SUBSET']
+        description += ' (SEQUENTAIL)' if ENV['SEQ']
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
@@ -84,11 +101,14 @@ module ReportPortal
       end
 
       def example_started(notification)
-        description = notification.example.description
+        is_rerun = !ENV['RERUN'].nil?
+        description = notification.description
+
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Example description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('notification': #{notification.inspect})"
           return
         end
+
         ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                                                    :STEP,
                                                                    nil,
@@ -96,7 +116,7 @@ module ReportPortal
                                                                    '',
                                                                    false,
                                                                    [],
-                                                                   @is_rerun)
+                                                                   is_rerun)
         example_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
         if example_node.nil?
           p "Example node is nil for scenario #{ReportPortal.current_scenario.inspect}"
@@ -163,8 +183,8 @@ module ReportPortal
         puts "read_log_file_content failed\n Error: #{error}"
       end
 
-      def upload_screenshots(notification)
-        notification.example.metadata[:screenshot].each do |img|
+      def upload_screenshots(example)
+        example.metadata[:screenshot].each do |img|
           file_name = "./log/#{img}.jpg"
           new_file_name = "./log/#{SecureRandom.uuid}.jpg"
           FileUtils.cp(file_name, new_file_name)
