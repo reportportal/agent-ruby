@@ -63,7 +63,7 @@ module ReportPortal
         is_rerun = !ENV['RERUN'].nil?
         should_report = failed == 0 || is_rerun
         puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s}"
-        
+        should_report
       end
 
       def example_group_started(group_notification)
