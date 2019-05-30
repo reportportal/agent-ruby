@@ -59,9 +59,11 @@ module ReportPortal
       end
 
       def should_report?(notification)
-        failed = notification.examples.select { |example| example.execution_result.status == :failed }
+        failed = notification.examples.select { |example| example.execution_result.status == :failed }.count
         is_rerun = !ENV['RERUN'].nil?
-        failed == 0 || is_rerun
+        should_report = failed == 0 || is_rerun
+        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s}"
+        should_report
       end
 
       def example_group_started(group_notification)
