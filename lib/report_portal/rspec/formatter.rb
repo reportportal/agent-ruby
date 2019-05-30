@@ -41,9 +41,7 @@ module ReportPortal
       end
 
       def dump_summary(notification)
-        should_report = should_report?(notification)  # Report to RP only if no failures OR if rerun
-        puts "[RP] Should Report?  ==>  #{should_report}"
-        return unless should_report
+        return unless should_report?(notification)  # Report to RP only if no failures OR if rerun
         example_group_started(notification.examples.first.example_group)
         notification.examples.each do |example|
           example_started(example)
@@ -61,11 +59,11 @@ module ReportPortal
       end
 
       def should_report?(notification)
-        failed = notification.examples.select { |example| example.execution_result.status == :failed }
+        failed = notification.examples.select { |example| example.execution_result.status == :failed }.count
         is_rerun = !ENV['RERUN'].nil?
-        puts "[RP] Failures = #{failed}"
-        puts "[RP] Rerun = #{is_rerun.to_s}"
-        failed == 0 || is_rerun
+        should_report = failed == 0 || is_rerun
+        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s}"
+        
       end
 
       def example_group_started(group_notification)
