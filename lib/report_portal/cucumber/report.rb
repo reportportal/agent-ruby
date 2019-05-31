@@ -2,6 +2,7 @@ require 'cucumber/formatter/io'
 require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
+require 'tempfile'
 
 require_relative '../../reportportal'
 require_relative '../logging/logger'
@@ -53,8 +54,8 @@ module ReportPortal
 
       def lock_file(file_path = nil)
         file_path ||= ReportPortal::Settings.instance.file_with_launch_id
-        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
-        file_path ||= tmp_dir + 'rp_launch_id.tmp'
+        file_path ||= Dir.tmpdir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= Dir.tmpdir + 'rp_launch_id.tmp'
         file_path
       end
 
@@ -185,10 +186,6 @@ module ReportPortal
           time_to_send = ReportPortal.last_used_time + 1
         end
         ReportPortal.last_used_time = time_to_send
-      end
-
-      def tmp_dir
-        Pathname(ENV['TMPDIR'] ? ENV['TMPDIR'] : Dir.tmpdir)
       end
 
       def same_feature_as_previous_test_case?(feature)
