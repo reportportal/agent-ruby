@@ -25,10 +25,7 @@ module ReportPortal
           end
           sleep_time = 5
           sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
-
-          File.open(lock_file, 'r') do |f|
-            ReportPortal.launch_id = f.read
-          end
+          ReportPortal.launch_id = read_lock_file(lock_file)
           add_process_description
         end
       end
@@ -57,12 +54,12 @@ module ReportPortal
         end
       end
 
+      private
+
       def lock_file(file_path = nil)
         file_path ||= Dir.tmpdir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
         super(file_path)
       end
-
-      private
 
       def set_parallel_tests_vars
         pid = Process.pid
