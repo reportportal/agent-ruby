@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.email                  = 'dzmitry_humianiuk@epam.com'
   s.homepage               = 'https://github.com/reportportal/agent-ruby'
   s.files                  = ['README.md', 'LICENSE', 'LICENSE.LESSER'] + Dir['lib/**/*']
-  s.required_ruby_version  = '>= 1.9.3'
+  s.required_ruby_version  = '>= 2.3.0'
   s.license                = 'Apache-2.0'
 
   s.add_dependency('rest-client', '~> 2.0')

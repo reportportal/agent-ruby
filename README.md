@@ -10,7 +10,7 @@
 
 ## Installation
 
-Use Ruby 2.2+
+Use Ruby 2.3+
 
 **Rubygems**
 
