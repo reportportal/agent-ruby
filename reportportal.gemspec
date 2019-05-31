@@ -16,4 +16,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency('rest-client', '~> 2.0')
   s.add_dependency('rubytree', '>=0.9.3')
+
+  s.add_development_dependency('rubocop', '0.71')
 end
