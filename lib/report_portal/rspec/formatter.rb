@@ -58,14 +58,6 @@ module ReportPortal
         # stop(nil)
       end
 
-      def should_report?(notification)
-        failed = notification.examples.select { |example| example.execution_result.status == :failed }.count
-        is_rerun = !ENV['RERUN'].nil?
-        should_report = failed == 0 || is_rerun
-        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s}"
-        should_report
-      end
-
       def example_group_started(group_notification, first_example)
         description = group_notification.description
         description = "#{description} (SUBSET = #{ENV['SUBSET']})" if ENV['SUBSET']
@@ -194,6 +186,15 @@ module ReportPortal
 
       def format_start_time(example)
         (example.execution_result.started_at.to_f * 1000).to_i
+      end
+
+      def should_report?(notification)
+        failed = notification.examples.select { |example| example.execution_result.status == :failed }.count
+        is_rerun = !ENV['RERUN'].nil?
+        is_sequential = !ENV['SEQ'].nil?
+        should_report = failed == 0 || is_rerun || is_sequential
+        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s} | SEQ = #{is_sequential}"
+        should_report
       end
     end
   end
