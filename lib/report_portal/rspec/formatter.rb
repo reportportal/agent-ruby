@@ -42,7 +42,7 @@ module ReportPortal
 
       def dump_summary(notification)
         return unless should_report?(notification)  # Report to RP only if no failures OR if rerun
-        example_group_started(notification.examples.first.example_group)
+        example_group_started(notification.examples.first.example_group, notification.examples.first)
         notification.examples.each do |example|
           example_started(example)
           case example.execution_result.status
@@ -66,7 +66,7 @@ module ReportPortal
         should_report
       end
 
-      def example_group_started(group_notification)
+      def example_group_started(group_notification, first_example)
         description = group_notification.description
         description = "#{description} (SUBSET = #{ENV['SUBSET']})" if ENV['SUBSET']
         description += ' (SEQUENTAIL)' if ENV['SEQ']
@@ -78,7 +78,7 @@ module ReportPortal
         item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                           :TEST,
                                           nil,
-                                          ReportPortal.now,
+                                          format_start_time(first_example),
                                           '',
                                           false,
                                           tags,
@@ -111,7 +111,7 @@ module ReportPortal
         ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                                                    :STEP,
                                                                    nil,
-                                                                   ReportPortal.now,
+                                                                   format_start_time(notification),
                                                                    '',
                                                                    false,
                                                                    [],
@@ -190,6 +190,10 @@ module ReportPortal
           ReportPortal.send_file(:failed, new_file_name, img, ReportPortal.now, 'image/jpg')
           File.delete(new_file_name)
         end
+      end
+
+      def format_start_time(example)
+        (example.execution_result.started_at.to_f * 1000).to_i
       end
     end
   end
