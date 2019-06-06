@@ -81,7 +81,7 @@ module ReportPortal
       do_request(url) do |resource|
         res = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
         ENV[LAUNCH_ID] = res[JSON_ID]
-        ENV[LAUNCH_NUMBER] = res [JSON_NUMBER]
+        ENV[LAUNCH_NUMBER] = res[JSON_NUMBER].to_s
       end
     end
 
