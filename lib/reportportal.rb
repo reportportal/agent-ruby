@@ -25,6 +25,11 @@ require 'tempfile'
 require_relative 'report_portal/settings'
 require_relative 'report_portal/patches/rest_client'
 
+LAUNCH_ID = 'rp_launch_id'
+LAUNCH_NUMBER = 'rp_launch_number'
+JSON_ID = 'id'
+JSON_NUMBER = 'number'
+
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags, :retry)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
@@ -61,15 +66,22 @@ module ReportPortal
     end
 
     def launch_id
-      p "[RP] Launch ID = #{ENV['rp_launch_id']}"
-      ENV['rp_launch_id']
+      p "[RP] Launch ID = #{ENV[LAUNCH_ID]}"
+      ENV[LAUNCH_ID]
+    end
+
+    def launch_number
+      p "[RP] Launch Number = #{ENV[LAUNCH_NUMBER]}"
+      ENV[LAUNCH_NUMBER]
     end
 
     def start_launch(description, start_time = now)
       url = "#{Settings.instance.project_url}/launch"
       data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
-      ENV['rp_launch_id'] = do_request(url) do |resource|
-        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
+      do_request(url) do |resource|
+        res = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
+        ENV[LAUNCH_ID] = res[JSON_ID]
+        ENV[LAUNCH_NUMBER] = res [JSON_NUMBER]
       end
     end
 
