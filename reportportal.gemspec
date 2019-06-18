@@ -32,6 +32,16 @@ Gem::Specification.new do |s|
   s.required_ruby_version  = '>= 1.9.3'
   s.license                = 'LGPL-3.0'
 
-  s.add_dependency('rest-client', '~> 2.0')
-  s.add_dependency('rubytree', '>=0.9.3')
+  s.add_runtime_dependency('rest-client', '~> 2.0')
+  
+  s.add_runtime_dependency('cucumber', '~> 3.0')
+  s.add_runtime_dependency('rubytree', '~> 1.0')
+  s.add_runtime_dependency('rspec', '~> 3.8')
+  s.add_runtime_dependency('rake', '~> 12.3')
+  s.add_runtime_dependency('parallel_tests', '~> 2.15')
+  s.add_runtime_dependency('sys-proctable', '1.1.5')
+
+  s.add_runtime_dependency('logging', '~> 2.2')
+  s.add_runtime_dependency('log4r', '~> 1.1')
+
 end
