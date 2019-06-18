@@ -17,5 +17,5 @@
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
 module ReportPortal
-  VERSION = '0.7'
+  VERSION = '0.7.1'
 end
