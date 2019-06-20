@@ -23,13 +23,6 @@ Layout/EmptyLineAfterGuardClause:
 
 # Offense count: 1
 # Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment, AllowBeforeTrailingComments, ForceEqualSignAlignment.
-Layout/ExtraSpacing:
-  Exclude:
-    - 'lib/report_portal/logging/logging_appender.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
 Layout/LeadingCommentSpace:
   Exclude:
     - 'lib/report_portal/cucumber/parallel_formatter.rb'
