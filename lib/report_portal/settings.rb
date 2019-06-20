@@ -28,26 +28,18 @@ module ReportPortal
         'use_standard_logger' => false,
         'launch_id' => false,
         'file_with_launch_id' => false,
-        'launch_uuid'=>true #used when multiple cucumber processes executed 
+        'launch_uuid'=>false
       }
 
       keys.each do |key, is_required|
         define_singleton_method(key.to_sym) { setting(key) }
         fail "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
       end
-      launch_uuid = SecureRandom.uuid unless launch_uuid
+      launch_uuid ||= SecureRandom.uuid
     end
 
     def launch_mode
       is_debug ? 'DEBUG' : 'DEFAULT'
-    end
-
-    def file_with_launch_id=(val)
-      @file_with_launch_id = val
-    end
-
-    def file_with_launch_id
-      @file_with_launch_id
     end
 
     def formatter_modes
