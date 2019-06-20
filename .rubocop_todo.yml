@@ -21,12 +21,6 @@ Layout/EmptyLineAfterGuardClause:
     - 'lib/report_portal/cucumber/json_slurper.rb'
     - 'tests/features/step_definitions/steps.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Layout/LeadingCommentSpace:
-  Exclude:
-    - 'lib/report_portal/cucumber/parallel_formatter.rb'
-
 # Offense count: 2
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, IndentationWidth.
