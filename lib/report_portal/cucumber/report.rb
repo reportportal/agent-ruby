@@ -191,7 +191,7 @@ module ReportPortal
 
       def read_lock_file(file_path)
         content = nil
-        File.open(file_with_launch_id, 'r') do |f|
+        File.open(file_path, 'r') do |f|
           f.flock(File::LOCK_SH)
           content = File.read(file_path)
           f.flock(File::LOCK_UN)
