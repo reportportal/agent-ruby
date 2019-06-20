@@ -21,14 +21,6 @@ Layout/EmptyLineAfterGuardClause:
     - 'lib/report_portal/cucumber/json_slurper.rb'
     - 'tests/features/step_definitions/steps.rb'
 
-# Offense count: 3
-# Cop supports --auto-correct.
-Layout/SpaceAfterComma:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/reportportal.rb'
-    - 'tests/formatter_spec.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.

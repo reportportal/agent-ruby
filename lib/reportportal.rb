@@ -102,7 +102,7 @@ module ReportPortal
       url = "#{Settings.instance.project_url}/log"
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
-        temp = Tempfile.open(['file',extension])
+        temp = Tempfile.open(['file', extension])
         temp.binmode
         temp.write(Base64.decode64(path))
         temp.rewind

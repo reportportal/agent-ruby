@@ -37,7 +37,7 @@ describe ReportPortal do
       end
 
       context 'scenario created' do
-        before(:each) {report_portal.scenario_name('Scenario',name, "#{__FILE__} #{__LINE__}", nil)}
+        before(:each) {report_portal.scenario_name('Scenario', name, "#{__FILE__} #{__LINE__}", nil)}
 
         it 'should be allow to close as skipped' do
           step_match = double('StepMatch')

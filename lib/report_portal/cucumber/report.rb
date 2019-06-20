@@ -129,7 +129,7 @@ module ReportPortal
       end
 
       def embed(src, mime_type, label, desired_time = ReportPortal.now)
-        ReportPortal.send_file(:info, src, label, time_to_send(desired_time),mime_type)
+        ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
       private
