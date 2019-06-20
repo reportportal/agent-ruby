@@ -60,7 +60,7 @@ module ReportPortal
       end
 
       def set_file_lock_with_launch_id(lock_file, launch_id)
-        FileUtils.mkdir_p lock_file.dirname
+        FileUtils.mkdir_p File.dirname(lock_file)
         File.open(lock_file, 'w') do |f|
           f.flock(File::LOCK_EX)
           f.write(launch_id)
@@ -164,8 +164,8 @@ module ReportPortal
 
       def lock_file(file_path = nil)
         file_path ||= ReportPortal::Settings.instance.file_with_launch_id
-        file_path ||= Dir.tmpdir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
-        file_path ||= Dir.tmpdir + 'rp_launch_id.tmp'
+        file_path ||= Dir.tmpdir + "/report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= Dir.tmpdir + '/rp_launch_id.tmp'
         file_path
       end
 

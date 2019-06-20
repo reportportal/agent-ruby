@@ -57,29 +57,31 @@ module ReportPortal
       private
 
       def lock_file(file_path = nil)
-        file_path ||= Dir.tmpdir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
+        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
         super(file_path)
       end
 
       def set_parallel_tests_vars
-        pid = Process.pid
-        loop do
-          #FIXME failing in jenkins
-          current_process = Sys::ProcTable.ps(pid)
-          #TODO: add exception to fall back to cucumber process 
-          # 1. if rm_launch_uuid was created by some other parallel script that executes cucumber batch of feature files
-          # 2. if fallback to cucumber process, this allows to use same formatter sequential and parallel executions
-          # useful when formatters are default configured in AfterConfiguration hook 
-          # config.formats.push(["ReportPortal::Cucumber::ParallelFormatter", {}, set_up_output_format(report_name, :report_portal)])
-          raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if current_process.nil?
-          match = current_process.cmdline.match(/bin(?:\/|\\)parallel_(?:cucumber|test)(.+)/)
-          if match
-            @pid_of_parallel_tests = current_process.pid
-            @cmd_args_of_parallel_tests = match[1].strip.split
-            break
-          end
-          pid = Sys::ProcTable.ps(pid).ppid
+        process_list = Sys::ProcTable.ps
+        runner_process ||= get_parallel_test_process(process_list)
+        runner_process ||= get_cucumber_test_process(process_list)
+        raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if runner_process.nil?
+        @pid_of_parallel_tests = runner_process.pid
+        @cmd_args_of_parallel_tests = runner_process.cmdline.split(' ',2).pop
+      end
+
+      def get_parallel_test_process(process_list)
+        process_list.each do |process|
+          return process if process.cmdline.match(/bin(?:\/|\\)parallel_(?:cucumber|test)(.+)/)
         end
+        nil
+      end
+
+      def get_cucumber_test_process(process_list)
+        process_list.each do |process|
+          return process if process.cmdline.match(/bin(?:\/|\\)(?:cucumber)(.+)/)
+        end
+        nil
       end
 
       #time required for first tread to created remote project in RP and save id to file
