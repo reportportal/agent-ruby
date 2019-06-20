@@ -20,6 +20,7 @@ require 'cucumber/formatter/io'
 require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
+require 'tempfile'
 
 require_relative '../../reportportal'
 require_relative '../logging/logger'
@@ -58,24 +59,12 @@ module ReportPortal
                 ReportPortal::Settings.instance.launch_id
               else
                 file_path = lock_file
-                if File.file?(file_path)
-                  File.read(file_path)
-                else
-                  new_launch(desired_time, cmd_args, file_path)
-                end
+                File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
               end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
-
         else
           new_launch(desired_time, cmd_args)
         end
-      end
-
-      def lock_file(file_path = nil)
-        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
-        file_path ||= tmp_dir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
-        file_path ||= tmp_dir + 'rp_launch_id.tmp'
-        file_path
       end
 
       def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
@@ -193,6 +182,23 @@ module ReportPortal
 
       private
 
+      def lock_file(file_path = nil)
+        file_path ||= ReportPortal::Settings.instance.file_with_launch_id
+        file_path ||= Dir.tmpdir + "report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        file_path ||= Dir.tmpdir + 'rp_launch_id.tmp'
+        file_path
+      end
+
+      def read_lock_file(file_path)
+        content = nil
+        File.open(file_with_launch_id, 'r') do |f|
+          f.flock(File::LOCK_SH)
+          content = File.read(file_path)
+          f.flock(File::LOCK_UN)
+        end
+        content
+      end
+
       # Report Portal sorts logs by time. However, several logs might have the same time.
       #   So to get Report Portal sort them properly the time should be different in all logs related to the same item.
       #   And thus it should be stored.
@@ -205,10 +211,6 @@ module ReportPortal
           time_to_send = ReportPortal.last_used_time + 1
         end
         ReportPortal.last_used_time = time_to_send
-      end
-
-      def tmp_dir
-        Pathname(ENV['TMPDIR'] ? ENV['TMPDIR'] : Dir.tmpdir)
       end
 
       def same_feature_as_previous_test_case?(feature)

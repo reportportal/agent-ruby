@@ -45,12 +45,10 @@ module ReportPortal
             end
             sleep 0.5
           end
-          File.open(lock_file, 'r') do |f|
-            ReportPortal.launch_id = f.read
-          end
-          add_process_description
           sleep_time = 5
           sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
+          ReportPortal.launch_id = read_lock_file(lock_file)
+          add_process_description
         end
       end
 
@@ -70,7 +68,7 @@ module ReportPortal
 
           # TODO: if parallel test does not need to finish launch, there should be env variable to support this.
           #  as report launch is is created by first process it should also be finished by same process
-          unless ReportPortal::Settings.instance.file_with_launch_id
+          unless ReportPortal::Settings.instance.launch_id || ReportPortal::Settings.instance.file_with_launch_id
             ReportPortal.close_child_items(nil)
             time_to_send = time_to_send(desired_time)
             ReportPortal.finish_launch(time_to_send)
@@ -78,16 +76,17 @@ module ReportPortal
         end
       end
 
+      private
+
       def lock_file(file_path = nil)
-        file_path ||= tmp_dir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
+        file_path ||= Dir.tmpdir + "parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
         super(file_path)
       end
-
-      private
 
       def set_parallel_tests_vars
         pid = Process.pid
         loop do
+          #FIXME failing in jenkins
           current_process = Sys::ProcTable.ps(pid)
           #TODO: add exception to fall back to cucumber process 
           # 1. if rm_launch_uuid was created by some other parallel script that executes cucumber batch of feature files
