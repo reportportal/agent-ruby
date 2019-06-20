@@ -23,15 +23,6 @@ Layout/EmptyLineAfterGuardClause:
 
 # Offense count: 5
 # Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment.
-Layout/SpaceAroundOperators:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/report_portal/logging/logging_appender.rb'
-    - 'lib/report_portal/rspec/formatter.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.
 # SupportedStyles: space, no_space, compact
 # SupportedStylesForEmptyBraces: space, no_space

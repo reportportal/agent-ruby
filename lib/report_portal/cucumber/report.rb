@@ -102,7 +102,7 @@ module ReportPortal
         end
 
         if status != :passed
-          log_level = (status == :skipped)? :warn : :error
+          log_level = (status == :skipped) ? :warn : :error
           step_type = if step?(test_step)
                         'Step'
                       else
