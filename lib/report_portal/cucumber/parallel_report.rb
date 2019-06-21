@@ -11,12 +11,12 @@ module ReportPortal
         true
       end
 
-      def initialize(desired_time)
+      def initialize()
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
         if ParallelTests.first_process?
-          start_launch(desired_time)
+          start_launch()
         else
           start_time = monotonic_time
           loop do
@@ -26,8 +26,6 @@ module ReportPortal
             end
             sleep 0.5
           end
-          sleep_time = 5
-          sleep(sleep_time) # stagger start times for reporting to Report Portal to avoid collision
           ReportPortal.launch_id = read_lock_file(lock_file)
           add_process_description
         end
