@@ -36,12 +36,12 @@ module ReportPortal
         #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
-                if ReportPortal::Settings.instance.launch_id
-                  ReportPortal::Settings.instance.launch_id
-                else
-                  file_path = lock_file
-                  File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
-                end
+            if ReportPortal::Settings.instance.launch_id
+              ReportPortal::Settings.instance.launch_id
+            else
+              file_path = lock_file
+              File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
+            end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           new_launch(desired_time, cmd_args)

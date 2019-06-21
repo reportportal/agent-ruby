@@ -9,7 +9,6 @@ module ReportPortal
       include ::Cucumber::Formatter::Io
       # @api private
       def initialize(config)
-
         setup_message_processing
 
         @io = ensure_io(config.out_stream)
@@ -19,7 +18,7 @@ module ReportPortal
             process_message(event_name, event)
           end
         end
-        config.on_event(:test_run_finished) {finish_message_processing}
+        config.on_event(:test_run_finished) { finish_message_processing }
       end
 
       def puts(message)
