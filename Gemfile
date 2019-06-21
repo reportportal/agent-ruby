@@ -3,8 +3,8 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'cucumber', '~> 3'
-gem 'rest-client'
 gem 'parallel_tests', '~> 2.15.0'
+gem 'rest-client'
 gem 'rake'
 gem 'rspec'
 gem 'rubytree', git: 'https://github.com/razboev/RubyTree'

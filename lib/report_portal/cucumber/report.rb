@@ -9,6 +9,7 @@ require_relative '../logging/logger'
 
 module ReportPortal
   module Cucumber
+    # @api private
     class Report
       @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
 
@@ -35,12 +36,12 @@ module ReportPortal
         #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
-              if ReportPortal::Settings.instance.launch_id
-                ReportPortal::Settings.instance.launch_id
-              else
-                file_path = lock_file
-                File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
-              end
+                if ReportPortal::Settings.instance.launch_id
+                  ReportPortal::Settings.instance.launch_id
+                else
+                  file_path = lock_file
+                  File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
+                end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           new_launch(desired_time, cmd_args)
@@ -55,7 +56,7 @@ module ReportPortal
 
       def description(cmd_args = ARGV)
         description ||= ReportPortal::Settings.instance.description
-        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
+        description ||= cmd_args.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
         description
       end
 
@@ -108,7 +109,7 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
+            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end

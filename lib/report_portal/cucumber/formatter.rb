@@ -10,7 +10,6 @@ module ReportPortal
       # @api private
       def initialize(config)
 
-
         setup_message_processing
 
         @io = ensure_io(config.out_stream)

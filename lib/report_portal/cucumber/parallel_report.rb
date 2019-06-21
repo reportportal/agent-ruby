@@ -20,9 +20,10 @@ module ReportPortal
           start_time = monotonic_time
           loop do
             break if File.exist?(lock_file)
-            if monotonic_time - start_time > wait_time_for_launch_start
-              raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_start} seconds"
+            if monotonic_time - start_time > wait_time_for_launch_create
+              raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_create} seconds"
             end
+
             sleep 0.5
           end
           ReportPortal.launch_id = read_lock_file(lock_file)
@@ -31,7 +32,7 @@ module ReportPortal
       end
 
       def add_process_description
-        description = ReportPortal.get_launch['description'].split(' ')
+        description = ReportPortal.remote_launch['description'].split(' ')
         description.push(self.description.split(' ')).flatten!
         ReportPortal.update_launch(description: description.uniq.join(' '))
       end
@@ -73,20 +74,19 @@ module ReportPortal
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(%r(bin(?:\/|\\)parallel_(?:cucumber|test)(.+)))
+          return process if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
         end
         nil
       end
 
       def get_cucumber_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(%r(bin(?:\/|\\)(?:cucumber)(.+)))
+          return process if process.cmdline.match(%r{bin(?:\/|\\)(?:cucumber)(.+)})
         end
         nil
       end
 
-      #time required for first tread to created remote project in RP and save id to file
-      def wait_time_for_launch_start
+      def wait_time_for_launch_create
         ENV['rp_parallel_launch_wait_time'] || 60
       end
 

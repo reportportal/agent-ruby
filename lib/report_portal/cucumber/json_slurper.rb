@@ -61,14 +61,14 @@ module ReportPortal
             element['steps'].each do |step|
               name = decorate("#{step['keyword']}#{step['name']}")
               if step['rows']
-                name << step['rows'].reduce("\n") {|acc, row| acc << decorate("| #{row['cells'].join(' | ')} |") << "\n"}
+                name << step['rows'].reduce("\n") { |acc, row| acc << decorate("| #{row['cells'].join(' | ')} |") << "\n" }
               end
               if step['doc_string']
                 name << %(\n"""\n#{step['doc_string']['value']}\n""")
               end
 
               ReportPortal.send_log(:passed, name, get_time)
-              step['output'].each {|o| ReportPortal.send_log(:passed, o, get_time)} unless step['output'].nil?
+              step['output'].each { |o| ReportPortal.send_log(:passed, o, get_time) } unless step['output'].nil?
               error = step['result']['error_message']
               ReportPortal.send_log(:failed, error, get_time) if error
               (step['embeddings'] || []).each do |embedding|
@@ -90,9 +90,9 @@ module ReportPortal
             end
             statuses += report_hooks(element, 'after')
 
-            status = if statuses.any? {|s| %w(failed undefined pending).include? s}
+            status = if statuses.any? { |s| %w(failed undefined pending).include? s }
                        :failed
-                     elsif statuses.all? {|s| s == 'passed'}
+                     elsif statuses.all? { |s| s == 'passed' }
                        :passed
                      else
                        :skipped
@@ -111,7 +111,7 @@ module ReportPortal
       private
 
       def tags(item)
-        item['tags'].nil? ? [] : item['tags'].map {|h| h['name']}
+        item['tags'].nil? ? [] : item['tags'].map { |h| h['name'] }
       end
 
       def decorate(str)
@@ -121,7 +121,7 @@ module ReportPortal
 
       def expanded?
         bad_item = @json.find do |f|
-          so = f['elements'].find {|e| e['keyword'] == 'Scenario Outline'}
+          so = f['elements'].find { |e| e['keyword'] == 'Scenario Outline' }
           so ? so.key?('examples') : false
         end
         bad_item.nil?
