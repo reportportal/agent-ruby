@@ -33,7 +33,6 @@ module ReportPortal
 
       private
 
-
       def report
         @report ||= ReportPortal::Cucumber::Report.new
       end
