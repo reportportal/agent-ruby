@@ -13,8 +13,8 @@ module ReportPortal
       MIN_DESCRIPTION_LENGTH = 3
 
       ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
-                                               :example_started, :example_passed, :example_failed,
-                                               :example_pending, :message, :stop
+                                         :example_started, :example_passed, :example_failed,
+                                         :example_pending, :message, :stop
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
