@@ -218,8 +218,8 @@ module ReportPortal
               type = :TEST
             end
             if parallel? &&
-                index < path_components.size - 1 && # is folder?
-                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+               index < path_components.size - 1 && # is folder?
+               (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
 
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)

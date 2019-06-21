@@ -98,7 +98,7 @@ module ReportPortal
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
-        temp = Tempfile.open(['file',extension])
+        temp = Tempfile.open(['file', extension])
         temp.binmode
         temp.write(Base64.decode64(path))
         temp.rewind

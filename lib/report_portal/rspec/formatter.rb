@@ -13,15 +13,15 @@ module ReportPortal
       MIN_DESCRIPTION_LENGTH = 3
 
       ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
-                                               :example_started, :example_passed, :example_failed,
-                                               :example_pending, :message, :stop
+                                         :example_started, :example_passed, :example_failed,
+                                         :example_pending, :message, :stop
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
       end
 
       def start(_start_notification)
-        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
         ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
@@ -33,7 +33,7 @@ module ReportPortal
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
         end
-        item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
+        item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH - 1],
                                           :TEST,
                                           nil,
                                           ReportPortal.now,
@@ -63,7 +63,7 @@ module ReportPortal
           p "Example description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('notification': #{notification.inspect})"
           return
         end
-        ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
+        ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH - 1],
                                                                    :STEP,
                                                                    nil,
                                                                    ReportPortal.now,
