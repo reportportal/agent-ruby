@@ -9,10 +9,8 @@ require_relative '../logging/logger'
 
 module ReportPortal
   module Cucumber
-    # @api private
     class Report
-
-      @folder_creation_tracking_file = Pathname(Dir.tmpdir)  + "folder_creation_tracking.lck"
+      @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
 
       def parallel?
         false
@@ -54,8 +52,8 @@ module ReportPortal
         set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
         ReportPortal.launch_id
       end
-      
-      def description(cmd_args=ARGV)
+
+      def description(cmd_args = ARGV)
         description ||= ReportPortal::Settings.instance.description
         description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
         description
@@ -203,7 +201,6 @@ module ReportPortal
         parent_node = @root_node
         child_node = nil
         path_components = feature.location.file.split(File::SEPARATOR)
-        path_components_no_feature = feature.location.file.split(File::SEPARATOR)[0...path_components.size - 1]
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node # if child node was not created yet

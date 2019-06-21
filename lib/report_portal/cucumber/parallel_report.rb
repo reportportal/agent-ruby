@@ -6,17 +6,16 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-
       def parallel?
         true
       end
 
-      def initialize()
+      def initialize
         @root_node = Tree::TreeNode.new('')
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
         if ParallelTests.first_process?
-          start_launch()
+          start_launch
         else
           start_time = monotonic_time
           loop do
@@ -33,8 +32,8 @@ module ReportPortal
 
       def add_process_description
         description = ReportPortal.get_launch['description'].split(' ')
-        description.push(self.description().split(' ')).flatten!
-        ReportPortal.update_launch({description: description.uniq.join(' ')})
+        description.push(self.description.split(' ')).flatten!
+        ReportPortal.update_launch(description: description.uniq.join(' '))
       end
 
       def done(desired_time = ReportPortal.now)
@@ -67,27 +66,28 @@ module ReportPortal
         runner_process ||= get_parallel_test_process(process_list)
         runner_process ||= get_cucumber_test_process(process_list)
         raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if runner_process.nil?
+
         @pid_of_parallel_tests = runner_process.pid
-        @cmd_args_of_parallel_tests = runner_process.cmdline.split(' ',2).pop
+        @cmd_args_of_parallel_tests = runner_process.cmdline.split(' ', 2).pop
       end
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(/bin(?:\/|\\)parallel_(?:cucumber|test)(.+)/)
+          return process if process.cmdline.match(%r(bin(?:\/|\\)parallel_(?:cucumber|test)(.+)))
         end
         nil
       end
 
       def get_cucumber_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(/bin(?:\/|\\)(?:cucumber)(.+)/)
+          return process if process.cmdline.match(%r(bin(?:\/|\\)(?:cucumber)(.+)))
         end
         nil
       end
 
       #time required for first tread to created remote project in RP and save id to file
       def wait_time_for_launch_start
-        ENV['rp_parallel_launch_wait_time'] ? ENV['rp_parallel_launch_wait_time'] : 60
+        ENV['rp_parallel_launch_wait_time'] || 60
       end
 
       def monotonic_time
