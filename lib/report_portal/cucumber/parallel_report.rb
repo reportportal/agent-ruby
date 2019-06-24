@@ -37,7 +37,7 @@ module ReportPortal
         ReportPortal.update_launch(description: description.uniq.join(' '))
       end
 
-      def done(desired_time = ReportPortal.now)
+      def test_run_finished(event, desired_time = ReportPortal.now)
         end_feature(desired_time) if @feature_node
 
         if ParallelTests.first_process?

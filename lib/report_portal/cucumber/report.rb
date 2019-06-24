@@ -143,7 +143,7 @@ module ReportPortal
         end
       end
 
-      def done(desired_time = ReportPortal.now)
+      def test_run_finished(event, desired_time = ReportPortal.now)
         end_feature(desired_time) if @feature_node
 
         unless attach_to_launch?
