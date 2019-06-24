@@ -37,17 +37,16 @@ module ReportPortal
         ReportPortal.update_launch(description: description.uniq.join(' '))
       end
 
-      def test_run_finished(event, desired_time = ReportPortal.now)
-        end_feature(desired_time) if @feature_node
+      def test_run_finished(_event, desired_time = ReportPortal.now)
+        end_feature(desired_time) unless @root_node.is_root?
 
         if ParallelTests.first_process?
           ParallelTests.wait_for_other_processes_to_finish
 
           File.delete(lock_file)
 
-          # TODO: if parallel test does not need to finish launch, there should be env variable to support this.
-          #  as report launch is is created by first process it should also be finished by same process
-          unless ReportPortal::Settings.instance.launch_id || ReportPortal::Settings.instance.file_with_launch_id
+          unless attach_to_launch?
+            $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
             ReportPortal.close_child_items(nil)
             time_to_send = time_to_send(desired_time)
             ReportPortal.finish_launch(time_to_send)

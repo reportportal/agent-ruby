@@ -97,6 +97,11 @@ Send reporting commands in the same main thread used for running tests. This mod
 Report Portal client. It changes default behavior to send commands in the separate thread.
 Default behavior is there not to slow test execution. </td>
 </tr>
+<tr>
+<td>skip_reporting_hierarchy</td>
+<td>
+Do not create items for folders and feature files</td>
+</tr>
 </tbody>
 </table>
 
