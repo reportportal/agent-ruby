@@ -12,6 +12,7 @@ module ReportPortal
 
       def initialize
         @root_node = Tree::TreeNode.new('')
+        @parent_item_node = @root_node
         ReportPortal.last_used_time = 0
         set_parallel_tests_vars
         if ParallelTests.first_process?
