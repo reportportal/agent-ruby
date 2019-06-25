@@ -213,7 +213,7 @@ module ReportPortal
         process_list = Sys::ProcTable.ps
         runner_process ||= get_parallel_test_process(process_list)
         runner_process ||= get_cucumber_test_process(process_list)
-        raise 'Could not find parallel_cucumber/parallel_test in ancestors of current process' if runner_process.nil?
+        raise 'Failed to find any cucumber related test process' if runner_process.nil?
 
         @pid_of_parallel_tests = runner_process.pid
         @cmd_args_of_parallel_tests = runner_process.cmdline.split(' ', 2).pop

@@ -112,7 +112,6 @@ module ReportPortal
       end
     end
 
-    # needed for parallel formatter
     def item_id_of(name, parent_node)
       if parent_node.is_root? # folder without parent folder
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
@@ -127,7 +126,6 @@ module ReportPortal
       end
     end
 
-    # needed for parallel formatter
     def close_child_items(parent_id)
       if parent_id.nil?
         url = "item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"

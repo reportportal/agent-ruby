@@ -114,12 +114,6 @@ Experimental support for three common logging frameworks was added:
 
 To use Logger, set use_standard_logger parameter to true (see Configuration chapter). For the other two corresponding appenders/outputters are available under reportportal/logging.
 
-## Parallel formatter
-
-ReportPortal::Cucumber::ParallelFormatter can be used for tests started via parallel_tests gem.
-
-Note: Launch id is shared between independent processes (as is the case with parallel_tests gem) via a file in `Dir.tmpdir`.
-
 ## Links
 
  - [ReportPortal](https://github.com/reportportal/)

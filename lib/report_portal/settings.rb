@@ -24,7 +24,6 @@ module ReportPortal
         'tags' => false,
         'is_debug' => false,
         'disable_ssl_verification' => false,
-        # for parallel execution only
         'use_standard_logger' => false,
         'launch_id' => false,
         'file_with_launch_id' => false,
