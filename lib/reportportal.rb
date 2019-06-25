@@ -1,21 +1,3 @@
-# Copyright 2015 EPAM Systems
-# 
-# 
-# This file is part of Report Portal.
-# 
-# Report Portal is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# ReportPortal is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
-
 require 'json'
 require 'rest_client'
 require 'uri'
@@ -55,7 +37,7 @@ module ReportPortal
       @launch_id = JSON.parse(response)['id']
     end
 
-    def get_launch()
+    def remote_launch
       response = project_resource["launch/#{@launch_id}"].get
       JSON.parse(response)
     end
@@ -79,8 +61,9 @@ module ReportPortal
         response = project_resource[url].post(data.to_json)
       rescue RestClient::Exception => e
         response_message = JSON.parse(e.response)['message']
-        m = response_message.match(/Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'/)
+        m = response_message.match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
         raise unless m
+
         time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
         data[:start_time] = (time.to_f * 1000).to_i + 1000
         ReportPortal.last_used_time = data[:start_time]
@@ -115,7 +98,7 @@ module ReportPortal
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
-        temp = Tempfile.open(['file',extension])
+        temp = Tempfile.open(['file', extension])
         temp.binmode
         temp.write(Base64.decode64(path))
         temp.rewind
@@ -184,6 +167,7 @@ module ReportPortal
       verify_ssl = Settings.instance.disable_ssl_verification
       options[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
       RestClient::Resource.new(Settings.instance.project_url, options) do |response, request, _, &block|
+        raise ::RestClient::Exception.new  response.body if response.code == 406
         unless (200..207).include?(response.code)
           p "ReportPortal API returned #{response}"
           p "Offending request method/URL: #{request.args[:method].upcase} #{request.args[:url]}"

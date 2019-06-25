@@ -1,21 +1,3 @@
-# Copyright 2015 EPAM Systems
-# 
-# 
-# This file is part of Report Portal.
-# 
-# Report Portal is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# ReportPortal is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
-
 require 'securerandom'
 require 'tree'
 require 'rspec/core'
@@ -31,15 +13,15 @@ module ReportPortal
       MIN_DESCRIPTION_LENGTH = 3
 
       ::RSpec::Core::Formatters.register self, :start, :example_group_started, :example_group_finished,
-                                               :example_started, :example_passed, :example_failed,
-                                               :example_pending, :message, :stop
+                                         :example_started, :example_passed, :example_failed,
+                                         :example_pending, :message, :stop
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
       end
 
       def start(_start_notification)
-        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=')? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
         ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node
@@ -51,7 +33,7 @@ module ReportPortal
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
         end
-        item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
+        item = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH - 1],
                                           :TEST,
                                           nil,
                                           ReportPortal.now,
@@ -81,7 +63,7 @@ module ReportPortal
           p "Example description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('notification': #{notification.inspect})"
           return
         end
-        ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
+        ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH - 1],
                                                                    :STEP,
                                                                    nil,
                                                                    ReportPortal.now,

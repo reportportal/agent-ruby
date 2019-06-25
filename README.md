@@ -10,7 +10,7 @@
 
 ## Installation
 
-Use Ruby 2.2+
+Use Ruby 2.3+
 
 **Rubygems**
 
@@ -75,9 +75,35 @@ WebMock.disable_net_connect!(:net_http_connect_on_start => true, :allow_localhos
 ## Formatter modes
 
 The following modes are supported:
+<table><thead><tr><th>Name</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr>
+<td>attach_to_launch</td>
+<td>
+Add executing features/scenarios to an existing launch. 
+Use following options to configure that. 
 
-* attach_to_launch (do not create a new launch but add executing features/scenarios to an existing launch. Use launch_id or file_with_launch_id settings to configure that. If they are not present client will check rp_launch_id.tmp in `Dir.tmpdir`)
-* group_by_folder (represent folders with features as nested suites in Report Portal) # TODO: not supported by new Cucumber formatter currently
+    1. launch_id
+    2. file_with_launch_id 
+    3. rp_launch_id.tmp in `Dir.tmpdir` 
+    
+   If above options not present client will create new launch
+</td>
+</tr>
+<tr>
+<td>use_same_thread_for_reporting</td>
+<td>
+Send reporting commands in the same main thread used for running tests. This mode is useful for debugging 
+Report Portal client. It changes default behavior to send commands in the separate thread.
+Default behavior is there not to slow test execution. </td>
+</tr>
+<tr>
+<td>skip_reporting_hierarchy</td>
+<td>
+Do not create items for folders and feature files</td>
+</tr>
+</tbody>
+</table>
 
 ## Logging
 Experimental support for three common logging frameworks was added:

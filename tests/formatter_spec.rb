@@ -8,7 +8,7 @@ end
 describe ReportPortal do
   require_relative '../lib/settings'
 
-  let(:report_portal) {ReportPortal.new(nil, IO, {:file => File.join('..', 'config', 'report_portal.yaml')})}
+  let(:report_portal) { ReportPortal.new(nil, IO, {:file => File.join('..', 'config', 'report_portal.yaml')}) }
 
   it 'should create launch' do
     id = report_portal.before_features(nil)
@@ -37,7 +37,7 @@ describe ReportPortal do
       end
 
       context 'scenario created' do
-        before(:each) {report_portal.scenario_name('Scenario',name, "#{__FILE__} #{__LINE__}", nil)}
+        before(:each) { report_portal.scenario_name('Scenario', name, "#{__FILE__} #{__LINE__}", nil) }
 
         it 'should be allow to close as skipped' do
           step_match = double('StepMatch')

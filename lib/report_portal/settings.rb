@@ -1,21 +1,3 @@
-# Copyright 2015 EPAM Systems
-# 
-# 
-# This file is part of Report Portal.
-# 
-# Report Portal is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# 
-# ReportPortal is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public License
-# along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
-
 require 'yaml'
 require 'singleton'
 
@@ -46,14 +28,13 @@ module ReportPortal
         'use_standard_logger' => false,
         'launch_id' => false,
         'file_with_launch_id' => false,
-        'launch_uuid'=>false
+        'launch_uuid' => false
       }
 
       keys.each do |key, is_required|
         define_singleton_method(key.to_sym) { setting(key) }
         fail "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
       end
-      launch_uuid ||= SecureRandom.uuid
     end
 
     def launch_mode
