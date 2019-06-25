@@ -6,8 +6,6 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-
-
       def initialize
         ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
@@ -38,27 +36,29 @@ module ReportPortal
         ReportPortal.update_launch(description: description.uniq.join(' '))
       end
 
-      def test_run_finished(_event, desired_time )
+      def test_run_finished(_event, desired_time)
         end_feature(desired_time) unless @parent_item_node.is_root?
-
         if parallel
           if ParallelTests.first_process?
             ParallelTests.wait_for_other_processes_to_finish
             close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
-
             File.delete(lock_file)
-
-            if started_launch || !attach_to_launch?
-              time_to_send = time_to_send(desired_time)
-              ReportPortal.finish_launch(time_to_send)
-            end
+            complete_launch(desired_time)
           end
         else
-          super(_event,desired_time)
+          close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
+          complete_launch(desired_time)
         end
       end
 
       private
+
+      def complete_launch(desired_time)
+        if started_launch || !attach_to_launch?
+          time_to_send = time_to_send(desired_time)
+          ReportPortal.finish_launch(time_to_send)
+        end
+      end
 
       def lock_file(file_path = nil)
         file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"

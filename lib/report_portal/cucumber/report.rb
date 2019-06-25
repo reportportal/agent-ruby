@@ -25,7 +25,7 @@ module ReportPortal
         start_launch(ReportPortal.now)
       end
 
-      def start_launch(desired_time , cmd_args = ARGV)
+      def start_launch(desired_time, cmd_args = ARGV)
         # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
         #
         # Expected behavior that make sense:
@@ -114,7 +114,7 @@ module ReportPortal
         end
       end
 
-      def test_step_finished(event, desired_time )
+      def test_step_finished(event, desired_time)
         test_step = event.test_step
         result = event.result
         status = result.to_sym
@@ -142,7 +142,7 @@ module ReportPortal
         end
       end
 
-      def test_run_finished(_event, desired_time )
+      def test_run_finished(_event, desired_time)
         end_feature(desired_time) unless @parent_item_node.is_root?
         close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
         if started_launch || !attach_to_launch?
