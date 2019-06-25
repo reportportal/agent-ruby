@@ -1,3 +1,5 @@
+require 'parallel_tests'
+
 require_relative 'report'
 
 module ReportPortal
@@ -11,6 +13,7 @@ module ReportPortal
 
       def initialize
         @root_node = Tree::TreeNode.new('')
+        @parent_item_node = @root_node
         @last_used_time ||= 0
 
         if ParallelTests.first_process?
@@ -30,8 +33,8 @@ module ReportPortal
         end
       end
 
-      def done(desired_time = ReportPortal.now)
-        end_feature(desired_time) if @feature_node
+      def test_run_finished(_event, desired_time = ReportPortal.now)
+        end_feature(desired_time) unless @parent_item_node.is_root?
 
         if ParallelTests.first_process?
           ParallelTests.wait_for_other_processes_to_finish

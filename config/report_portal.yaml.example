@@ -3,6 +3,6 @@ endpoint: https://localhost:8443/api/v1
 launch: example_launch_name
 project: default_project
 tags: [tag1, tag2, tag3]
-#formatter_modes: [group_by_folder]
+#formatter_modes: [skip_reporting_hierarchy]
 #is_debug: true
 #disable_ssl_verification: true

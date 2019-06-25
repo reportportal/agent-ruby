@@ -21,6 +21,7 @@ module ReportPortal
       def initialize
         @last_used_time = 0
         @root_node = Tree::TreeNode.new('')
+        @parent_item_node = @root_node
         start_launch
       end
 
@@ -44,8 +45,8 @@ module ReportPortal
       def test_case_started(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
         test_case = event.test_case
         feature = test_case.feature
-        unless same_feature_as_previous_test_case?(feature)
-          end_feature(desired_time) if @feature_node
+        if report_hierarchy? && !same_feature_as_previous_test_case?(feature)
+          end_feature(desired_time) unless @parent_item_node.is_root?
           start_feature_with_parentage(feature, desired_time)
         end
 
@@ -56,7 +57,7 @@ module ReportPortal
 
         ReportPortal.current_scenario = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
         scenario_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
-        @feature_node << scenario_node
+        @parent_item_node << scenario_node
         ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
       end
 
@@ -114,8 +115,8 @@ module ReportPortal
         end
       end
 
-      def done(desired_time = ReportPortal.now)
-        end_feature(desired_time) if @feature_node
+      def test_run_finished(_event, desired_time = ReportPortal.now)
+        end_feature(desired_time) unless @parent_item_node.is_root?
 
         unless attach_to_launch?
           close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
@@ -149,7 +150,7 @@ module ReportPortal
       end
 
       def same_feature_as_previous_test_case?(feature)
-        @feature_node && @feature_node.name == feature.location.file.split(File::SEPARATOR).last
+        @parent_item_node.name == feature.location.file.split(File::SEPARATOR).last
       end
 
       def start_feature_with_parentage(feature, desired_time)
@@ -187,11 +188,11 @@ module ReportPortal
           end
           parent_node = child_node
         end
-        @feature_node = child_node
+        @parent_item_node = child_node
       end
 
       def end_feature(desired_time)
-        ReportPortal.finish_item(@feature_node.content, nil, time_to_send(desired_time))
+        ReportPortal.finish_item(@parent_item_node.content, nil, time_to_send(desired_time))
         # Folder items can't be finished here because when the folder started we didn't track
         #   which features the folder contains.
         # It's not easy to do it using Cucumber currently:
@@ -208,6 +209,10 @@ module ReportPortal
 
       def step?(test_step)
         !::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
+      end
+
+      def report_hierarchy?
+        !ReportPortal::Settings.instance.formatter_modes.include?('skip_reporting_hierarchy')
       end
     end
   end

@@ -80,6 +80,7 @@ The following modes are supported:
 | --- | --- |
 | attach_to_launch | Do not create a new launch but add executing features/scenarios to an existing launch. Use launch_id or file_with_launch_id settings to configure that. If they are not present client will check rp_launch_id.tmp in `Dir.tmpdir`)
 | use_same_thread_for_reporting | Send reporting commands in the same main thread used for running tests. This mode is useful for debugging this Report Portal client. It changes default behavior to send commands in the separate thread. Default behavior is there not to slow test execution. |
+| skip_reporting_hierarchy | Do not create items for folders and feature files |
 
 ## Logging
 Experimental support for three common logging frameworks was added:
