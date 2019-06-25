@@ -6,17 +6,17 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-      def parallel?
-        true
-      end
+
 
       def initialize
+        ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
-        ReportPortal.last_used_time = 0
+
         set_parallel_tests_vars
+
         if ParallelTests.first_process?
-          start_launch
+          start_launch(ReportPortal.now)
         else
           start_time = monotonic_time
           loop do
@@ -38,20 +38,23 @@ module ReportPortal
         ReportPortal.update_launch(description: description.uniq.join(' '))
       end
 
-      def test_run_finished(_event, desired_time = ReportPortal.now)
-        end_feature(desired_time) unless @root_node.is_root?
+      def test_run_finished(_event, desired_time )
+        end_feature(desired_time) unless @parent_item_node.is_root?
 
-        if ParallelTests.first_process?
-          ParallelTests.wait_for_other_processes_to_finish
+        if parallel
+          if ParallelTests.first_process?
+            ParallelTests.wait_for_other_processes_to_finish
+            close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
 
-          File.delete(lock_file)
+            File.delete(lock_file)
 
-          unless attach_to_launch?
-            $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
-            ReportPortal.close_child_items(nil)
-            time_to_send = time_to_send(desired_time)
-            ReportPortal.finish_launch(time_to_send)
+            if started_launch || !attach_to_launch?
+              time_to_send = time_to_send(desired_time)
+              ReportPortal.finish_launch(time_to_send)
+            end
           end
+        else
+          super(_event,desired_time)
         end
       end
 
@@ -74,7 +77,10 @@ module ReportPortal
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+          if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+            @parallel = true
+            return process
+          end
         end
         nil
       end

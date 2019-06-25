@@ -11,11 +11,8 @@ module ReportPortal
   module Cucumber
     # @api private
     class Report
+      attr_accessor :parallel, :started_launch
       @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
-
-      def parallel?
-        false
-      end
 
       def attach_to_launch?
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
@@ -25,10 +22,10 @@ module ReportPortal
         ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
-        start_launch
+        start_launch(ReportPortal.now)
       end
 
-      def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
+      def start_launch(desired_time , cmd_args = ARGV)
         # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
         #
         # Expected behavior that make sense:
@@ -40,6 +37,7 @@ module ReportPortal
             if ReportPortal::Settings.instance.launch_id
               ReportPortal::Settings.instance.launch_id
             else
+              self.started_launch = true
               file_path = lock_file
               File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
             end
@@ -49,7 +47,7 @@ module ReportPortal
         end
       end
 
-      def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
+      def new_launch(desired_time, cmd_args = ARGV, lock_file = nil)
         ReportPortal.start_launch(description(cmd_args), time_to_send(desired_time))
         set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
         ReportPortal.launch_id
@@ -71,7 +69,7 @@ module ReportPortal
         end
       end
 
-      def test_case_started(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
+      def test_case_started(event, desired_time) # TODO: time should be a required argument
         test_case = event.test_case
         feature = test_case.feature
         if report_hierarchy? && !same_feature_as_previous_test_case?(feature)
@@ -90,7 +88,7 @@ module ReportPortal
         ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
       end
 
-      def test_case_finished(event, desired_time = ReportPortal.now)
+      def test_case_finished(event, desired_time)
         result = event.result
         status = result.to_sym
         issue = nil
@@ -102,7 +100,7 @@ module ReportPortal
         ReportPortal.current_scenario = nil
       end
 
-      def test_step_started(event, desired_time = ReportPortal.now)
+      def test_step_started(event, desired_time)
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
@@ -116,7 +114,7 @@ module ReportPortal
         end
       end
 
-      def test_step_finished(event, desired_time = ReportPortal.now)
+      def test_step_finished(event, desired_time )
         test_step = event.test_step
         result = event.result
         status = result.to_sym
@@ -144,21 +142,20 @@ module ReportPortal
         end
       end
 
-      def test_run_finished(_event, desired_time = ReportPortal.now)
+      def test_run_finished(_event, desired_time )
         end_feature(desired_time) unless @parent_item_node.is_root?
-
-        unless attach_to_launch?
-          close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
+        close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
+        if started_launch || !attach_to_launch?
           time_to_send = time_to_send(desired_time)
           ReportPortal.finish_launch(time_to_send)
         end
       end
 
-      def puts(message, desired_time = ReportPortal.now)
+      def puts(message, desired_time)
         ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
-      def embed(src, mime_type, label, desired_time = ReportPortal.now)
+      def embed(src, mime_type, label, desired_time)
         ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
@@ -218,7 +215,7 @@ module ReportPortal
               type = :TEST
             end
             # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-            if parallel? &&
+            if parallel &&
                index < path_components.size - 1 && # is folder?
                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
