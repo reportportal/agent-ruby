@@ -25,7 +25,7 @@ module ReportPortal
         start_launch(ReportPortal.now)
       end
 
-      def start_launch(desired_time , cmd_args = ARGV)
+      def start_launch(desired_time, cmd_args = ARGV)
         # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
         #
         # Expected behavior that make sense:

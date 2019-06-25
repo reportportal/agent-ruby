@@ -6,7 +6,6 @@ require_relative 'report'
 module ReportPortal
   module Cucumber
     class ParallelReport < Report
-
       def initialize
         ReportPortal.last_used_time = 0
         @root_node = Tree::TreeNode.new('')
