@@ -167,7 +167,8 @@ module ReportPortal
       verify_ssl = Settings.instance.disable_ssl_verification
       options[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
       RestClient::Resource.new(Settings.instance.project_url, options) do |response, request, _, &block|
-        raise ::RestClient::Exception.new  response.body if response.code == 406
+        raise(::RestClient::Exception.new, response.body) if response.code == 406
+        
         unless (200..207).include?(response.code)
           p "ReportPortal API returned #{response}"
           p "Offending request method/URL: #{request.args[:method].upcase} #{request.args[:url]}"
