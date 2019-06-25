@@ -32,7 +32,7 @@ Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` 
 
 * With Cucumber and parallel_tests gem:
 
-```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::ParallelFormatter'```
+```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::Formatter'```
 
 * With RSpec:
 
