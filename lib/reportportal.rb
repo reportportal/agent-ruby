@@ -163,11 +163,8 @@ module ReportPortal
           self.logger.error("TRACE[#{e.backtrace}]")
           raise
         end
-
+        
         retry unless (tries -= 1).zero?
-      rescue => e
-        debugger
-        puts 'say hello'
       end
       JSON.parse(response)
     end
