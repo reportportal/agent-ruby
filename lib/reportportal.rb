@@ -33,54 +33,30 @@ module ReportPortal
 
     def start_launch(description, start_time = now)
       data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
-      response = project_resource['launch'].post(data.to_json)
-      @launch_id = JSON.parse(response)['id']
+      @launch_id = process_request('launch',:post,data.to_json)['id']
     end
 
     def remote_launch
-      response = project_resource["launch/#{@launch_id}"].get
-      JSON.parse(response)
+      process_request("launch/#{@launch_id}",:get)
     end
 
     def update_launch(data)
-      project_resource["launch/#{@launch_id}/update"].put(data.to_json)
+      process_request("launch/#{@launch_id}/update",:put, data.to_json)
     end
 
     def finish_launch(end_time = now)
       self.logger.debug "finish_launch: [#{end_time}]"
       data = { end_time: end_time }
-      project_resource["launch/#{@launch_id}/finish"].put(data.to_json)
+      process_request("launch/#{@launch_id}/finish",:put,data.to_json)
     end
 
     def start_item(item_node)
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
-      retry_count = 0
-      begin
-        retry_count += 1
-        url = 'item'
-        url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
-        response = project_resource[url].post(data.to_json)
-      rescue RestClient::Exception => e
-        self.logger.warn("Exception[#{e}],response:[#{e.response}], retry_count: [#{retry_count}]")
-
-        response = JSON.parse(e.response)
-        m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
-        if m
-          time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
-          data[:start_time] = (time.to_f * 1000).to_i + 1000
-          ReportPortal.last_used_time = data[:start_time]
-        else
-          self.logger.error("RestClient::Exception -> response: [#{response}]")
-          self.logger.error("TRACE[#{e.backtrace}]")
-          raise
-        end
-
-
-        retry if retry_count < 10
-      end
-      JSON.parse(response)['id']
+      url = 'item'
+      url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
+      process_request(url,:post,data.to_json)['id']
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
@@ -93,7 +69,7 @@ module ReportPortal
           data[:issue] = { issue_type: 'NOT_ISSUE' }
         end
         self.logger.debug "finish_item:id[#{item}], data: #{data} "
-        project_resource["item/#{item.id}"].put(data.to_json)
+        process_request("item/#{item.id}",:put,data.to_json)
         item.closed = true
       end
     end
@@ -104,7 +80,7 @@ module ReportPortal
       @logger.debug "send_log: [#{status}],[#{message}], #{@current_scenario} "
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
-        project_resource['log'].post(data.to_json)
+        process_request("log",:post,data.to_json)
       end
     end
 
@@ -121,7 +97,7 @@ module ReportPortal
         label ||= File.basename(file)
         json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
         data = { :json_request_part => [json].to_json, label => file, :multipart => true, :content_type => 'application/json' }
-        project_resource['log'].post(data, content_type: 'multipart/form-data')
+        process_request("log",:post,data, content_type: 'multipart/form-data')
       end
     end
 
@@ -131,7 +107,7 @@ module ReportPortal
       else
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
-      data = JSON.parse(project_resource[url].get)
+      data = process_request(url,:get)
       if data.key? 'content'
         data['content'].empty? ? nil : data['content'][0]['id']
       else
@@ -148,7 +124,7 @@ module ReportPortal
       end
       ids = []
       loop do
-        response = JSON.parse(project_resource[url].get)
+        response = process_request(url,:get)
         if response.key?('links')
           link = response['links'].find { |i| i['rel'] == 'next' }
           url = link.nil? ? nil : link['href']
@@ -169,6 +145,29 @@ module ReportPortal
     end
 
     private
+
+    def process_request(path, method, *options)
+      tries = 5
+      begin
+        response = project_resource[path].send(method, *options)
+      rescue RestClient::Exception => e
+        self.logger.warn("Exception[#{e}],response:[#{e.response}], retry_count: [#{tries}]")
+        response = JSON.parse(e.response)
+        m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
+        if m
+          time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
+          data[:start_time] = (time.to_f * 1000).to_i + 1000
+          ReportPortal.last_used_time = data[:start_time]
+        else
+          self.logger.error("RestClient::Exception -> response: [#{response}]")
+          self.logger.error("TRACE[#{e.backtrace}]")
+          raise
+        end
+        
+        retry unless (tries -= 1).zero?
+      end
+      JSON.parse(response)
+    end
 
     def project_resource
       options = {}
