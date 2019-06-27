@@ -21,8 +21,10 @@ module ReportPortal
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
       end
 
-      def initialize
+      def initialize(logger)
+        @logger = logger
         ReportPortal.last_used_time = 0
+        ReportPortal.logger = logger
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
 
@@ -37,18 +39,18 @@ module ReportPortal
             if monotonic_time - start_time > wait_time_for_launch_create
               raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_create} seconds"
             end
+            @logger.debug "File with launch ID wasn't created after waiting #{monotonic_time - start_time} seconds"
 
             sleep 0.5
           end
           ReportPortal.launch_id = read_lock_file(lock_file)
+          @logger.debug "Attaching to launch using lock_file [#{lock_file}], launch_id: [#{ReportPortal.launch_id}] "
           add_process_description
         end
       end
 
 
       def start_launch(desired_time, cmd_args = ARGV)
-        # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
-        #
         # Expected behavior that make sense:
         #  1. If launch_id present attach to existing (simple use case)
         #  2. If launch_id not present check if exist rp_launch_id.tmp
@@ -62,13 +64,14 @@ module ReportPortal
               file_path = lock_file
               File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
             end
-          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+          @logger.info "Attaching to launch #{ReportPortal.launch_id}"
         else
           new_launch(desired_time, cmd_args)
         end
       end
 
       def new_launch(desired_time, cmd_args = ARGV, lock_file = nil)
+        @logger.info("Creating new launch at: [#{desired_time}], with cmd: [#{cmd_args}] and file lock: [#{lock_file}]")
         ReportPortal.start_launch(description(cmd_args), time_to_send(desired_time))
         set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
         ReportPortal.launch_id
@@ -90,7 +93,9 @@ module ReportPortal
         end
       end
 
-      def test_case_started(event, desired_time) # TODO: time should be a required argument
+      # scenario starts in separate treads
+      def test_case_started(event, desired_time)
+        @logger.debug "test_case_started: [#{event}], "
         test_case = event.test_case
         feature = test_case.feature
         if report_hierarchy? && !same_feature_as_previous_test_case?(feature)
@@ -110,6 +115,7 @@ module ReportPortal
       end
 
       def test_case_finished(event, desired_time)
+        @logger.debug "test_case_finished: [#{event}], "
         result = event.result
         status = result.to_sym
         issue = nil
@@ -122,6 +128,7 @@ module ReportPortal
       end
 
       def test_step_started(event, desired_time)
+        @logger.debug "test_step_started: [#{event}], "
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
@@ -165,16 +172,17 @@ module ReportPortal
 
       def test_run_finished(_event, desired_time)
         end_feature(desired_time) unless @parent_item_node.is_root?
+        @logger.info("Test run finish,")
         if parallel
           if ParallelTests.first_process?
             ParallelTests.wait_for_other_processes_to_finish
             close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
             File.delete(lock_file)
+            @logger.info("close launch , delete lock")
             complete_launch(desired_time)
           end
         else
           close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
-          complete_launch(desired_time)
         end
       end
 
@@ -269,10 +277,11 @@ module ReportPortal
       end
 
       def same_feature_as_previous_test_case?(feature)
-        @feature_node && @feature_node.name == feature.location.file.split(File::SEPARATOR).last
+        @parent_item_node.name == feature.location.file.split(File::SEPARATOR).last
       end
 
       def start_feature_with_parentage(feature, desired_time)
+        @logger.debug("start_feature_with_parentage: [#{feature}], [#{desired_time}]")
         parent_node = @root_node
         child_node = nil
         path_components = feature.location.file.split(File::SEPARATOR)
@@ -286,7 +295,7 @@ module ReportPortal
               type = :SUITE
             else
               name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file
+              description = feature.file # TODO: consider adding feature description and comments
               tags = feature.tags.map(&:name)
               type = :TEST
             end
