@@ -10,7 +10,7 @@ module ReportPortal
       # @api private
       def initialize(config)
         @logger ||= Logger.new(config.out_stream)
-        @logger.level = :info
+        @logger.level = ReportPortal::Settings.instance.log_level || :warn
         setup_message_processing
 
         [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished, :test_run_finished].each do |event_name|

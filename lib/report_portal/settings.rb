@@ -27,7 +27,8 @@ module ReportPortal
         'use_standard_logger' => false,
         'launch_id' => false,
         'file_with_launch_id' => false,
-        'launch_uuid' => false
+        'launch_uuid' => false,
+        'log_level' => false
       }
 
       keys.each do |key, is_required|
