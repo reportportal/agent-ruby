@@ -31,6 +31,7 @@ Layout/ExtraSpacing:
 # Offense count: 1
 # Cop supports --auto-correct.
 Layout/LeadingCommentSpace:
+  Enabled: true
 
 # Offense count: 2
 # Cop supports --auto-correct.
