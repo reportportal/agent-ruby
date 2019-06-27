@@ -12,7 +12,7 @@ module ReportPortal
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
 
   class << self
-    attr_accessor :launch_id, :current_scenario, :last_used_time
+    attr_accessor :launch_id, :current_scenario, :last_used_time, :logger
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -47,6 +47,7 @@ module ReportPortal
     end
 
     def finish_launch(end_time = now)
+      self.logger.debug "finish_launch: [#{end_time}]"
       data = { end_time: end_time }
       project_resource["launch/#{@launch_id}/finish"].put(data.to_json)
     end
@@ -55,19 +56,29 @@ module ReportPortal
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
+      retry_count = 0
       begin
+        retry_count += 1
         url = 'item'
         url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
         response = project_resource[url].post(data.to_json)
       rescue RestClient::Exception => e
-        response_message = JSON.parse(e.response)['message']
-        m = response_message.match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
-        raise unless m
+        self.logger.warn("Exception[#{e}],response:[#{e.response}], retry_count: [#{retry_count}]")
 
-        time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
-        data[:start_time] = (time.to_f * 1000).to_i + 1000
-        ReportPortal.last_used_time = data[:start_time]
-        retry
+        response = JSON.parse(e.response)
+        m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
+        if m
+          time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
+          data[:start_time] = (time.to_f * 1000).to_i + 1000
+          ReportPortal.last_used_time = data[:start_time]
+        else
+          self.logger.error("RestClient::Exception -> response: [#{response}]")
+          self.logger.error("TRACE[#{e.backtrace}]")
+          raise
+        end
+
+
+        retry if retry_count < 10
       end
       JSON.parse(response)['id']
     end
@@ -81,6 +92,7 @@ module ReportPortal
         elsif status == :skipped
           data[:issue] = { issue_type: 'NOT_ISSUE' }
         end
+        self.logger.debug "finish_item:id[#{item}], data: #{data} "
         project_resource["item/#{item.id}"].put(data.to_json)
         item.closed = true
       end
@@ -89,6 +101,7 @@ module ReportPortal
     # TODO: implement force finish
 
     def send_log(status, message, time)
+      @logger.debug "send_log: [#{status}],[#{message}], #{@current_scenario} "
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
         project_resource['log'].post(data.to_json)
@@ -112,7 +125,6 @@ module ReportPortal
       end
     end
 
-    # needed for parallel formatter
     def item_id_of(name, parent_node)
       if parent_node.is_root? # folder without parent folder
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
@@ -127,8 +139,8 @@ module ReportPortal
       end
     end
 
-    # needed for parallel formatter
     def close_child_items(parent_id)
+      self.logger.debug "closing child items: #{parent_id} "
       if parent_id.nil?
         url = "item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"
       else
@@ -167,13 +179,7 @@ module ReportPortal
       verify_ssl = Settings.instance.disable_ssl_verification
       options[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
       RestClient::Resource.new(Settings.instance.project_url, options) do |response, request, _, &block|
-        raise(::RestClient::Exception.new, response.body) if response.code == 406
-        
-        unless (200..207).include?(response.code)
-          p "ReportPortal API returned #{response}"
-          p "Offending request method/URL: #{request.args[:method].upcase} #{request.args[:url]}"
-          p "Offending request payload: #{request.args[:payload]}}"
-        end
+        self.logger.debug "Request: #{request.args[:method].upcase} #{request.args[:url]}, data: #{request.args[:payload]}"
         response.return!(&block)
       end
     end

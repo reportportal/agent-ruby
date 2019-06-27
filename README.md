@@ -28,11 +28,11 @@ Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` 
 
 * With Cucumber:
 
-```cucumber <other options> -f ReportPortal::Cucumber::Formatter```
+```cucumber <other options> -f ReportPortal::Cucumber::Formatter -o '<log_file>'```
 
 * With Cucumber and parallel_tests gem:
 
-```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::ParallelFormatter'```
+```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::Formatter'```
 
 * With RSpec:
 
@@ -54,6 +54,7 @@ Supported settings:
  - launch_id - id of previously created launch (to be used if formatter_modes contains attach_to_launch)
  - file_with_launch_id - path to file with id of launch (to be used if formatter_modes contains attach_to_launch)
  - disable_ssl_verification - set to true to disable SSL verification on connect to ReportPortal (potential security hole!). Set `disable_ssl_verification` to `true` if you see the following error:
+ - log_level - this is log level for report_portal agent (useful for troubleshooting issued when run in parallel mode)
 ```
 Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish produced an exception: RestClient::SSLCertificateNotVerified: SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
 ```
@@ -113,12 +114,6 @@ Experimental support for three common logging frameworks was added:
 - [Log4r](https://rubygems.org/gems/log4r)
 
 To use Logger, set use_standard_logger parameter to true (see Configuration chapter). For the other two corresponding appenders/outputters are available under reportportal/logging.
-
-## Parallel formatter
-
-ReportPortal::Cucumber::ParallelFormatter can be used for tests started via parallel_tests gem.
-
-Note: Launch id is shared between independent processes (as is the case with parallel_tests gem) via a file in `Dir.tmpdir`.
 
 ## Links
 

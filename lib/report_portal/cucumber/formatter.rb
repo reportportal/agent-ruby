@@ -9,9 +9,9 @@ module ReportPortal
       include ::Cucumber::Formatter::Io
       # @api private
       def initialize(config)
+        @logger ||= Logger.new(config.out_stream)
+        @logger.level = ReportPortal::Settings.instance.log_level || :warn
         setup_message_processing
-
-        @io = ensure_io(config.out_stream)
 
         [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished, :test_run_finished].each do |event_name|
           config.on_event event_name do |event|
@@ -23,8 +23,6 @@ module ReportPortal
 
       def puts(message)
         process_message(:puts, message)
-        @io.puts(message)
-        @io.flush
       end
 
       def embed(*args)
@@ -34,7 +32,7 @@ module ReportPortal
       private
 
       def report
-        @report ||= ReportPortal::Cucumber::Report.new
+        @report ||= ReportPortal::Cucumber::Report.new(@logger)
       end
 
       def setup_message_processing
