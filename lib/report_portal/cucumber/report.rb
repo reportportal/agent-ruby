@@ -174,11 +174,11 @@ module ReportPortal
 
       def test_run_finished(_event, desired_time)
         end_feature(desired_time) unless @parent_item_node.is_root?
-        @logger.info("Test run finish,")
+        @logger.info("Test run finish: [#{@parent_item_node}]")
         close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
         if parallel
           @logger.debug("Parallel process: #{@pid_of_parallel_tests}")
-          if ParallelTests.first_process?
+          if ParallelTests.first_process? && started_launch
             ParallelTests.wait_for_other_processes_to_finish
             File.delete(lock_file)
             @logger.info("close launch , delete lock")
@@ -220,18 +220,18 @@ module ReportPortal
 
       def set_parallel_tests_vars
         process_list = Sys::ProcTable.ps
+        @logger.debug("set_test_variables: #{process_list}")
         runner_process ||= get_parallel_test_process(process_list)
         runner_process ||= get_cucumber_test_process(process_list)
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
-
         @pid_of_parallel_tests = runner_process.pid
-        @cmd_args_of_parallel_tests = runner_process.cmdline.split(' ', 2).pop
       end
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
           if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
             @parallel = true
+            @logger.debug("get_parallel_test_process: #{process.cmdline}")
             return process
           end
         end
@@ -240,7 +240,10 @@ module ReportPortal
 
       def get_cucumber_test_process(process_list)
         process_list.each do |process|
-          return process if process.cmdline.match(%r{bin(?:\/|\\)(?:cucumber)(.+)})
+          if process.cmdline.match(%r{bin(?:\/|\\)(?:cucumber)(.+)})
+            @logger.debug("get_cucumber_test_process: #{process.cmdline}")
+            return process
+          end
         end
         nil
       end
@@ -329,19 +332,27 @@ module ReportPortal
       end
 
       def close_all_children_of(root_node)
-        @logger.debug("close_all_children_of: [#{root_node}]")
+        @logger.debug("close_all_children_of: [#{root_node.children}]")
         root_node.postordered_each do |node|
           @logger.debug("close_all_children_of:postordered_each [#{node.content}]")
-          if !node.is_root? && !node.content.closed
+          unless node.is_root? || node.content.closed
             begin
               item = ReportPortal.remote_item(node.content[:id])
               @logger.debug("item details: [#{item}]")
+              @logger.debug("Start launch: [#{started_launch}], item[:status] [#{item['status']}]")
               if started_launch
-                  ReportPortal.close_child_items(node.content[:id]) if item['status'].eql?('IN_PROGRESS')
+                if item.key?('end_time')
+                  @logger.warn("Main process: item already closed skipping.")
+                else
+                  ReportPortal.close_child_items(node.content[:id])
                   ReportPortal.finish_item(node.content)
-
+                end
               else
-                ReportPortal.finish_item(node.content) unless item['status'].eql?('IN_PROGRESS')
+                if item.key?('end_time')
+                  ReportPortal.finish_item(node.content)
+                else
+                  @logger.warn("Child process: item in use cannot close it. [#{item}]")
+                end
               end
             end
           end
