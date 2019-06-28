@@ -69,7 +69,13 @@ module ReportPortal
           data[:issue] = { issue_type: 'NOT_ISSUE' }
         end
         self.logger.debug "finish_item:id[#{item}], data: #{data} "
-        process_request("item/#{item.id}",:put,data.to_json)
+        begin
+          process_request("item/#{item.id}", :put, data.to_json)
+        rescue RestClient::Exception => e
+          response = JSON.parse(e.response)
+
+          raise e unless response['error_code'] == 40018
+        end
         item.closed = true
       end
     end
