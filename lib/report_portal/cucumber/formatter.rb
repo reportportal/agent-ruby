@@ -1,12 +1,10 @@
 require 'thread'
-require 'cucumber/formatter/io'
 
 require_relative 'report'
 
 module ReportPortal
   module Cucumber
     class Formatter
-      include ::Cucumber::Formatter::Io
       # @api private
       def initialize(config)
         @logger ||= Logger.new(config.out_stream)
