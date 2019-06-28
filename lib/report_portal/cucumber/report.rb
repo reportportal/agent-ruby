@@ -173,16 +173,14 @@ module ReportPortal
       def test_run_finished(_event, desired_time)
         end_feature(desired_time) unless @parent_item_node.is_root?
         @logger.info("Test run finish,")
+        close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
         if parallel
           if ParallelTests.first_process?
             ParallelTests.wait_for_other_processes_to_finish
-            close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
             File.delete(lock_file)
             @logger.info("close launch , delete lock")
             complete_launch(desired_time)
           end
-        else
-          close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
         end
       end
 
