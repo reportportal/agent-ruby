@@ -160,7 +160,7 @@ module ReportPortal
           self.logger.warn("RP error : 40025, time of a child: [#{data['start_time']}], paren time: [#{(parent_time.to_f * 1000).to_i}]")
           data['start_time'] = (parent_time.to_f * 1000).to_i + 1000
           options[0] = data.to_json
-          ReportPortal.last_used_time = time
+          ReportPortal.last_used_time = data['start_time']
         else
           self.logger.error("RestClient::Exception -> response: [#{response}]")
           self.logger.error("TRACE[#{e.backtrace}]")
