@@ -31,8 +31,10 @@ module ReportPortal
         set_parallel_tests_vars
 
         if ParallelTests.first_process?
+          @logger.debug("First process: #{@pid_of_parallel_tests}")
           start_launch(ReportPortal.now)
         else
+          @logger.debug("Child process: #{@pid_of_parallel_tests}")
           start_time = monotonic_time
           loop do
             break if File.exist?(lock_file)
@@ -175,6 +177,7 @@ module ReportPortal
         @logger.info("Test run finish,")
         close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
         if parallel
+          @logger.debug("Parallel process: #{@pid_of_parallel_tests}")
           if ParallelTests.first_process?
             ParallelTests.wait_for_other_processes_to_finish
             File.delete(lock_file)
@@ -326,9 +329,21 @@ module ReportPortal
       end
 
       def close_all_children_of(root_node)
+        @logger.debug("close_all_children_of: [#{root_node}]")
         root_node.postordered_each do |node|
+          @logger.debug("close_all_children_of:postordered_each [#{node.content}]")
           if !node.is_root? && !node.content.closed
-            ReportPortal.finish_item(node.content)
+            begin
+              item = ReportPortal.remote_item(node.content[:id])
+              @logger.debug("item details: [#{item}]")
+              if started_launch
+                  ReportPortal.close_child_items(node.content[:id]) if item['status'].eql?('IN_PROGRESS')
+                  ReportPortal.finish_item(node.content)
+
+              else
+                ReportPortal.finish_item(node.content) unless item['status'].eql?('IN_PROGRESS')
+              end
+            end
           end
         end
       end
