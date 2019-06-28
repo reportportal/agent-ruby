@@ -101,14 +101,22 @@ module ReportPortal
       end
     end
 
-    def item_id_of(name, parent_node)
+    def get_item(name, parent_node)
       if parent_node.is_root? # folder without parent folder
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
       else
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
-      data = process_request(url,:get)
-      if data.key? 'content'
+      process_request(url,:get)
+    end
+
+    def remote_item(item_id)
+      process_request("item/#{item_id}",:get)
+    end
+
+    def item_id_of(name, parent_node)
+      data = get_item(name, parent_node)
+          if data.key? 'content'
         data['content'].empty? ? nil : data['content'][0]['id']
       else
         nil # item isn't started yet
