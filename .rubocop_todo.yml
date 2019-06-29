@@ -31,8 +31,7 @@ Layout/ExtraSpacing:
 # Offense count: 1
 # Cop supports --auto-correct.
 Layout/LeadingCommentSpace:
-  Exclude:
-    - 'lib/report_portal/cucumber/parallel_formatter.rb'
+  Enabled: true
 
 # Offense count: 2
 # Cop supports --auto-correct.
@@ -121,7 +120,7 @@ Metrics/BlockLength:
 # Offense count: 2
 # Configuration parameters: CountComments.
 Metrics/ClassLength:
-  Max: 165
+  Max: 250
 
 # Offense count: 3
 Metrics/CyclomaticComplexity:
@@ -181,8 +180,6 @@ Style/Documentation:
     - 'spec/**/*'
     - 'test/**/*'
     - 'lib/report_portal/cucumber/formatter.rb'
-    - 'lib/report_portal/cucumber/parallel_formatter.rb'
-    - 'lib/report_portal/cucumber/parallel_report.rb'
     - 'lib/report_portal/logging/logger.rb'
     - 'lib/report_portal/patches/rest_client.rb'
     - 'lib/report_portal/rspec/formatter.rb'
@@ -237,7 +234,6 @@ Style/GlobalVars:
 # Configuration parameters: MinBodyLength.
 Style/GuardClause:
   Exclude:
-    - 'lib/report_portal/cucumber/parallel_report.rb'
     - 'lib/report_portal/cucumber/report.rb'
     - 'lib/report_portal/rspec/formatter.rb'
     - 'lib/reportportal.rb'

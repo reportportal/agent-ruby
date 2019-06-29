@@ -3,6 +3,9 @@ require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
 require 'tempfile'
+require 'parallel_tests'
+require 'sys/proctable'
+require 'fileutils'
 
 require_relative '../../reportportal'
 require_relative '../logging/logger'
@@ -11,51 +14,74 @@ module ReportPortal
   module Cucumber
     # @api private
     class Report
-
-      def parallel?
-        false
-      end
+      attr_accessor :parallel, :started_launch
+      @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
 
       def attach_to_launch?
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
       end
 
-      def initialize
+      def initialize(logger)
+        @logger = logger
         ReportPortal.last_used_time = 0
+        ReportPortal.logger = logger
         @root_node = Tree::TreeNode.new('')
-        start_launch
+        @parent_item_node = @root_node
+
+        set_parallel_tests_vars
+
+        if ParallelTests.first_process?
+          @logger.debug("First process: #{@pid_of_parallel_tests}")
+          start_launch(ReportPortal.now)
+        else
+          @logger.debug("Child process: #{@pid_of_parallel_tests}")
+          start_time = monotonic_time
+          loop do
+            break if File.exist?(lock_file)
+            if monotonic_time - start_time > wait_time_for_launch_create
+              raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_create} seconds"
+            end
+            @logger.debug "File with launch ID wasn't created after waiting #{monotonic_time - start_time} seconds"
+
+            sleep 0.5
+          end
+          ReportPortal.launch_id = read_lock_file(lock_file)
+          @logger.debug "Attaching to launch using lock_file [#{lock_file}], launch_id: [#{ReportPortal.launch_id}] "
+          add_process_description
+        end
       end
 
-      def start_launch(desired_time = ReportPortal.now, cmd_args = ARGV)
-        # Not sure what is the use case if launch id is missing. But it does not make much of practical usage
-        #
+
+      def start_launch(desired_time, cmd_args = ARGV)
         # Expected behavior that make sense:
         #  1. If launch_id present attach to existing (simple use case)
         #  2. If launch_id not present check if exist rp_launch_id.tmp
         #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
-              if ReportPortal::Settings.instance.launch_id
-                ReportPortal::Settings.instance.launch_id
-              else
-                file_path = lock_file
-                File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
-              end
-          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+            if ReportPortal::Settings.instance.launch_id
+              ReportPortal::Settings.instance.launch_id
+            else
+              self.started_launch = true
+              file_path = lock_file
+              File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
+            end
+          @logger.info "Attaching to launch #{ReportPortal.launch_id}"
         else
           new_launch(desired_time, cmd_args)
         end
       end
 
-      def new_launch(desired_time = ReportPortal.now, cmd_args = ARGV, lock_file = nil)
+      def new_launch(desired_time, cmd_args = ARGV, lock_file = nil)
+        @logger.info("Creating new launch at: [#{desired_time}], with cmd: [#{cmd_args}] and file lock: [#{lock_file}]")
         ReportPortal.start_launch(description(cmd_args), time_to_send(desired_time))
         set_file_lock_with_launch_id(lock_file, ReportPortal.launch_id) if lock_file
         ReportPortal.launch_id
       end
 
-      def description(cmd_args=ARGV)
+      def description(cmd_args = ARGV)
         description ||= ReportPortal::Settings.instance.description
-        description ||= cmd_args.map {|arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]")}.join(' ')
+        description ||= cmd_args.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
         description
       end
 
@@ -69,11 +95,13 @@ module ReportPortal
         end
       end
 
-      def test_case_started(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
+      # scenario starts in separate treads
+      def test_case_started(event, desired_time)
+        @logger.debug "test_case_started: [#{event}], "
         test_case = event.test_case
         feature = test_case.feature
-        unless same_feature_as_previous_test_case?(feature)
-          end_feature(desired_time) if @feature_node
+        if report_hierarchy? && !same_feature_as_previous_test_case?(feature)
+          end_feature(desired_time) unless @parent_item_node.is_root?
           start_feature_with_parentage(feature, desired_time)
         end
 
@@ -84,11 +112,12 @@ module ReportPortal
 
         ReportPortal.current_scenario = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
         scenario_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
-        @feature_node << scenario_node
+        @parent_item_node << scenario_node
         ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
       end
 
-      def test_case_finished(event, desired_time = ReportPortal.now)
+      def test_case_finished(event, desired_time)
+        @logger.debug "test_case_finished: [#{event}], "
         result = event.result
         status = result.to_sym
         issue = nil
@@ -100,7 +129,8 @@ module ReportPortal
         ReportPortal.current_scenario = nil
       end
 
-      def test_step_started(event, desired_time = ReportPortal.now)
+      def test_step_started(event, desired_time)
+        @logger.debug "test_step_started: [#{event}], "
         test_step = event.test_step
         if step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = test_step.source.last
@@ -108,13 +138,13 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
+            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
       end
 
-      def test_step_finished(event, desired_time = ReportPortal.now)
+      def test_step_finished(event, desired_time)
         test_step = event.test_step
         result = event.result
         status = result.to_sym
@@ -142,31 +172,88 @@ module ReportPortal
         end
       end
 
-      def done(desired_time = ReportPortal.now)
-        end_feature(desired_time) if @feature_node
-
-        unless attach_to_launch?
-          close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
-          time_to_send = time_to_send(desired_time)
-          ReportPortal.finish_launch(time_to_send)
+      def test_run_finished(_event, desired_time)
+        end_feature(desired_time) unless @parent_item_node.is_root?
+        @logger.info("Test run finish: [#{@parent_item_node}]")
+        close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
+        if parallel
+          @logger.debug("Parallel process: #{@pid_of_parallel_tests}")
+          if ParallelTests.first_process? && started_launch
+            ParallelTests.wait_for_other_processes_to_finish
+            File.delete(lock_file)
+            @logger.info("close launch , delete lock")
+            complete_launch(desired_time)
+          end
         end
       end
 
-      def puts(message, desired_time = ReportPortal.now)
+      def add_process_description
+        description = ReportPortal.remote_launch['description'].split(' ')
+        description.push(self.description.split(' ')).flatten!
+        ReportPortal.update_launch(description: description.uniq.join(' '))
+      end
+
+      def puts(message, desired_time)
         ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
-      def embed(src, mime_type, label, desired_time = ReportPortal.now)
+      def embed(src, mime_type, label, desired_time)
         ReportPortal.send_file(:info, src, label, time_to_send(desired_time), mime_type)
       end
 
       private
 
+      def complete_launch(desired_time)
+        if started_launch || !attach_to_launch?
+          time_to_send = time_to_send(desired_time)
+          ReportPortal.finish_launch(time_to_send)
+        end
+      end
+
       def lock_file(file_path = nil)
         file_path ||= ReportPortal::Settings.instance.file_with_launch_id
+        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
         file_path ||= Dir.tmpdir + "/report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
         file_path ||= Dir.tmpdir + '/rp_launch_id.tmp'
         file_path
+      end
+
+      def set_parallel_tests_vars
+        process_list = Sys::ProcTable.ps
+        @logger.debug("set_test_variables: #{process_list}")
+        runner_process ||= get_parallel_test_process(process_list)
+        runner_process ||= get_cucumber_test_process(process_list)
+        raise 'Failed to find any cucumber related test process' if runner_process.nil?
+        @pid_of_parallel_tests = runner_process.pid
+      end
+
+      def get_parallel_test_process(process_list)
+        process_list.each do |process|
+          if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+            @parallel = true
+            @logger.debug("get_parallel_test_process: #{process.cmdline}")
+            return process
+          end
+        end
+        nil
+      end
+
+      def get_cucumber_test_process(process_list)
+        process_list.each do |process|
+          if process.cmdline.match(%r{bin(?:\/|\\)(?:cucumber)(.+)})
+            @logger.debug("get_cucumber_test_process: #{process.cmdline}")
+            return process
+          end
+        end
+        nil
+      end
+
+      def wait_time_for_launch_create
+        ENV['rp_parallel_launch_wait_time'] || 60
+      end
+
+      def monotonic_time
+        Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
 
       def read_lock_file(file_path)
@@ -194,14 +281,14 @@ module ReportPortal
       end
 
       def same_feature_as_previous_test_case?(feature)
-        @feature_node && @feature_node.name == feature.location.file.split(File::SEPARATOR).last
+        @parent_item_node.name == feature.location.file.split(File::SEPARATOR).last
       end
 
       def start_feature_with_parentage(feature, desired_time)
+        @logger.debug("start_feature_with_parentage: [#{feature}], [#{desired_time}]")
         parent_node = @root_node
         child_node = nil
         path_components = feature.location.file.split(File::SEPARATOR)
-        path_components_no_feature = feature.location.file.split(File::SEPARATOR)[0...path_components.size - 1]
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node # if child node was not created yet
@@ -211,15 +298,15 @@ module ReportPortal
               tags = []
               type = :SUITE
             else
-              # TODO: Consider adding feature description and comments.
               name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file
+              description = feature.file # TODO: consider adding feature description and comments
               tags = feature.tags.map(&:name)
               type = :TEST
             end
-            if parallel? &&
-                index < path_components.size - 1 && # is folder?
-                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+            # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
+            if parallel &&
+               index < path_components.size - 1 && # is folder?
+               (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
               item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
@@ -228,16 +315,16 @@ module ReportPortal
               item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
-              item.id = ReportPortal.start_item(child_node)
+              item.id = ReportPortal.start_item(child_node) # TODO: multithreading
             end
           end
           parent_node = child_node
         end
-        @feature_node = child_node
+        @parent_item_node = child_node
       end
 
       def end_feature(desired_time)
-        ReportPortal.finish_item(@feature_node.content, nil, time_to_send(desired_time))
+        ReportPortal.finish_item(@parent_item_node.content, nil, time_to_send(desired_time))
         # Folder items can't be finished here because when the folder started we didn't track
         #   which features the folder contains.
         # It's not easy to do it using Cucumber currently:
@@ -245,15 +332,39 @@ module ReportPortal
       end
 
       def close_all_children_of(root_node)
+        @logger.debug("close_all_children_of: [#{root_node.children}]")
         root_node.postordered_each do |node|
-          if !node.is_root? && !node.content.closed
-            ReportPortal.finish_item(node.content)
+          @logger.debug("close_all_children_of:postordered_each [#{node.content}]")
+          unless node.is_root? || node.content.closed
+            begin
+              item = ReportPortal.remote_item(node.content[:id])
+              @logger.debug("item details: [#{item}]")
+              @logger.debug("Start launch: [#{started_launch}], item[:status] [#{item['status']}]")
+              if started_launch
+                if item.key?('end_time')
+                  @logger.warn("Main process: item already closed skipping.")
+                else
+                  ReportPortal.close_child_items(node.content[:id])
+                  ReportPortal.finish_item(node.content)
+                end
+              else
+                if item.key?('end_time')
+                  ReportPortal.finish_item(node.content)
+                else
+                  @logger.warn("Child process: item in use cannot close it. [#{item}]")
+                end
+              end
+            end
           end
         end
       end
 
       def step?(test_step)
         !::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
+      end
+
+      def report_hierarchy?
+        !ReportPortal::Settings.instance.formatter_modes.include?('skip_reporting_hierarchy')
       end
     end
   end

@@ -1,8 +1,8 @@
 uuid: 12345678-1234-1234-1234-123456789012
-endpoint: https://localhost:8443/api/v1
+endpoint: https://localhost:8080/api/v1
 launch: example_launch_name
-project: default_project
+project: default_personal
 tags: [tag1, tag2, tag3]
-#formatter_modes: [group_by_folder]
+#formatter_modes: [skip_reporting_hierarchy]
 #is_debug: true
 #disable_ssl_verification: true

@@ -24,18 +24,17 @@ module ReportPortal
         'tags' => false,
         'is_debug' => false,
         'disable_ssl_verification' => false,
-        # for parallel execution only
         'use_standard_logger' => false,
         'launch_id' => false,
         'file_with_launch_id' => false,
-        'launch_uuid'=>false
+        'launch_uuid' => false,
+        'log_level' => false
       }
 
       keys.each do |key, is_required|
         define_singleton_method(key.to_sym) { setting(key) }
         fail "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
       end
-      launch_uuid ||= SecureRandom.uuid
     end
 
     def launch_mode
