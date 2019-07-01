@@ -101,10 +101,14 @@ module ReportPortal
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
       url = "#{Settings.instance.project_url}/log"
       unless File.file?(path)
+        if mime_type =~ /;base64$/
+          mime_type = mime_type[0..-8]
+          path = Base64.decode64(path)
+        end
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
         temp = Tempfile.open(['file', extension])
         temp.binmode
-        temp.write(Base64.decode64(path))
+        temp.write(path)
         temp.rewind
         path = temp
       end
