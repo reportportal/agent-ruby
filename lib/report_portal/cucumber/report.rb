@@ -231,7 +231,6 @@ module ReportPortal
         runner_process ||= get_cucumber_test_process(process_list)
         @logger.debug("Cucumber runner pid: #{runner_process.pid}") if runner_process
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
-        debugger
         @pid_of_parallel_tests = runner_process.pid
       end
 
