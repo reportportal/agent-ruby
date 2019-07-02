@@ -212,9 +212,14 @@ module ReportPortal
 
       def lock_file(file_path = nil)
         file_path ||= ReportPortal::Settings.instance.file_with_launch_id
-        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock"
+        @logger.debug("Lock file (RReportPortal::Settings.instance.file_with_launch_id): #{file_path}") if file_path
         file_path ||= Dir.tmpdir + "/report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
+        @logger.debug("Lock file (ReportPortal::Settings.instance.launch_uuid): #{file_path}") if file_path
+        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock" if @pid_of_parallel_tests
+        @logger.debug("Lock file (/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock): #{file_path}") if file_path
         file_path ||= Dir.tmpdir + '/rp_launch_id.tmp'
+        @logger.debug("Lock file (/rp_launch_id.tmp): #{file_path}") if file_path
+
         file_path
       end
 
@@ -222,8 +227,11 @@ module ReportPortal
         process_list = Sys::ProcTable.ps
         @logger.debug("set_test_variables: #{process_list}")
         runner_process ||= get_parallel_test_process(process_list)
+        @logger.debug("Parallel cucumber runner pid: #{runner_process.pid}") if runner_process
         runner_process ||= get_cucumber_test_process(process_list)
+        @logger.debug("Cucumber runner pid: #{runner_process.pid}") if runner_process
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
+        debugger
         @pid_of_parallel_tests = runner_process.pid
       end
 
