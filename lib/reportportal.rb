@@ -1,18 +1,18 @@
 require 'json'
-require 'rest_client'
+require 'faraday'
 require 'uri'
 require 'pathname'
 require 'tempfile'
 
 require_relative 'report_portal/settings'
-require_relative 'report_portal/patches/rest_client'
+require_relative 'report_portal/patches/fariday'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
-
   class << self
     attr_accessor :launch_id, :current_scenario, :last_used_time, :logger
+    @verbose = false
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -91,6 +91,8 @@ module ReportPortal
     end
 
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
+      debugger
+      @verbose = true
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
         temp = Tempfile.open(['file', extension])
@@ -102,7 +104,7 @@ module ReportPortal
       File.open(File.realpath(path), 'rb') do |file|
         label ||= File.basename(file)
         json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
-        data = { :json_request_part => [json].to_json, label => file, :multipart => true, :content_type => 'application/json' }
+        data = { :json_request_part => [json].to_json, File.basename(file) => file, :content_type => 'application/json' }
         process_request("log",:post,data, content_type: 'multipart/form-data')
       end
     end
@@ -163,8 +165,9 @@ module ReportPortal
     def process_request(path, method, *options)
       tries = 5
       begin
-        response = project_resource[path].send(method, *options)
+        response = project_resource(method, path, *options)
       rescue RestClient::Exception => e
+        debugger
         self.logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
         self.logger.error("TRACE[#{e.backtrace}]")
         response = JSON.parse(e.response)
@@ -184,21 +187,49 @@ module ReportPortal
 
         retry unless (tries -= 1).zero?
       end
-      JSON.parse(response)
+      debugger if @verbose
+      JSON.parse(response.body)
     end
 
-    def project_resource
-      options = {}
-      options[:headers] = {
-        :Authorization => "Bearer #{Settings.instance.uuid}",
-        content_type: :json
-      }
-      verify_ssl = Settings.instance.disable_ssl_verification
-      options[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
-      RestClient::Resource.new(Settings.instance.project_url, options) do |response, request, _, &block|
-        self.logger.debug "Request: #{request.args[:method].upcase} #{request.args[:url]}, data: #{request.args[:payload]}"
-        response.return!(&block)
+    def project_resource(method, path,*options)
+
+      # settings  = {headers: {'content_type' => 'application/json'}}
+      # pop_items = []
+      # options.each_with_index do |option, i|
+      #   if option.is_a?(Hash)
+      #     if option.key?('content_type')
+      #       pop_items.push(i)
+      #       settings[:headers]['content_type'] = option['content_type']
+      #     end
+      #   end
+      # end
+      #
+      # settings.each do |setting_name, setting_value|
+      #   if setting_value.is_a?(Hash)
+      #     setting_value.each do |key, value|
+      #       tmp = rp_client.send(setting_name).merge
+      #       rp_client.send(setting_name+ '=')
+      #     end
+      #   else
+      #
+      #   end
+      #   rp_client.send()
+      # end
+      debugger if @verbose
+      rp_client.send(method, path , *options)
+    end
+
+    def rp_client
+      @connection ||= Faraday.new(url: Settings.instance.project_url) do  |f|
+        f.headers={Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json','Content-type': 'application/json'}
+        verify_ssl = Settings.instance.disable_ssl_verification
+        f.ssl.verify = !verify_ssl unless verify_ssl.nil?
+        f.request :multipart
+        f.request :url_encoded
+        f.adapter :net_http
       end
+
+      @connection
     end
   end
 end
