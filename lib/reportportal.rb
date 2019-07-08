@@ -165,7 +165,8 @@ module ReportPortal
       begin
         response = project_resource[path].send(method, *options)
       rescue RestClient::Exception => e
-        self.logger.warn("Exception[#{e}],response:[#{e.response}], retry_count: [#{tries}]")
+        self.logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
+        self.logger.error("TRACE[#{e.backtrace}]")
         response = JSON.parse(e.response)
         m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
         if m
