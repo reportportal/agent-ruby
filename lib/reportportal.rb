@@ -95,7 +95,6 @@ module ReportPortal
     end
 
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
-      @verbose = true
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
         temp = Tempfile.open(['file', extension])

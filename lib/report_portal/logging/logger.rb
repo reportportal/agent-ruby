@@ -2,7 +2,7 @@ require 'logger'
 
 module ReportPortal
   class << self
-    # Monkey-patches for built-in Logger class
+    # Monkey-patch for built-in Logger class
     def patch_logger
       Logger.class_eval do
         alias_method :orig_add, :add

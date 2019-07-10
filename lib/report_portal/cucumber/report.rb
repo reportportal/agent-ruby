@@ -197,7 +197,6 @@ module ReportPortal
 
       def puts(message, desired_time)
         ReportPortal.send_log(:info, message, time_to_send(desired_time))
-        ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
       def embed(src, mime_type, label, desired_time)
