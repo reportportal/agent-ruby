@@ -1,18 +1,18 @@
 require 'json'
-require 'rest_client'
+require 'faraday'
 require 'uri'
 require 'pathname'
 require 'tempfile'
 
 require_relative 'report_portal/settings'
-require_relative 'report_portal/patches/rest_client'
+require_relative 'report_portal/patches/fariday'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
-
   class << self
     attr_accessor :launch_id, :current_scenario, :last_used_time, :logger
+    @verbose = false
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -60,7 +60,10 @@ module ReportPortal
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
-      unless item.nil? || item.id.nil? || item.closed
+
+      if item.nil? || item.id.nil? || item.closed
+        self.logger.debug "finish_item: Item details are missing or already closed"
+      else
         data = { end_time: end_time.nil? ? now : end_time }
         data[:status] = status unless status.nil?
         if force_issue && status != :passed # TODO: check for :passed status is probably not needed
@@ -70,7 +73,8 @@ module ReportPortal
         end
         self.logger.debug "finish_item:id[#{item}], data: #{data} "
         begin
-          process_request("item/#{item.id}", :put, data.to_json)
+          response = process_request("item/#{item.id}", :put, data.to_json)
+          self.logger.debug "finish_item: response [#{response}] "
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
 
@@ -99,12 +103,13 @@ module ReportPortal
         temp.rewind
         path = temp
       end
-      File.open(File.realpath(path), 'rb') do |file|
-        label ||= File.basename(file)
-        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
-        data = { :json_request_part => [json].to_json, label => file, :multipart => true, :content_type => 'application/json' }
-        process_request("log",:post,data, content_type: 'multipart/form-data')
-      end
+        file_name = File.basename(path)
+        label ||= file_name
+        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: "#{file_name}" }, "Content-Type": 'application/json' }
+        headers = {'Content-Type': 'multipart/form-data'}
+        payload = { :json_request_part => [json].to_json,
+                    file_name => Faraday::UploadIO.new(path, mime_type)  }
+        process_request("log",:post,payload, headers)
     end
 
     def get_item(name, parent_node)
@@ -163,7 +168,7 @@ module ReportPortal
     def process_request(path, method, *options)
       tries = 5
       begin
-        response = project_resource[path].send(method, *options)
+        response = rp_client.send(method, path, *options)
       rescue RestClient::Exception => e
         self.logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
         self.logger.error("TRACE[#{e.backtrace}]")
@@ -184,21 +189,21 @@ module ReportPortal
 
         retry unless (tries -= 1).zero?
       end
-      JSON.parse(response)
+      JSON.parse(response.body)
     end
 
-    def project_resource
-      options = {}
-      options[:headers] = {
-        :Authorization => "Bearer #{Settings.instance.uuid}",
-        content_type: :json
-      }
-      verify_ssl = Settings.instance.disable_ssl_verification
-      options[:verify_ssl] = !verify_ssl unless verify_ssl.nil?
-      RestClient::Resource.new(Settings.instance.project_url, options) do |response, request, _, &block|
-        self.logger.debug "Request: #{request.args[:method].upcase} #{request.args[:url]}, data: #{request.args[:payload]}"
-        response.return!(&block)
+
+    def rp_client
+      @connection ||= Faraday.new(url: Settings.instance.project_url) do  |f|
+        f.headers={Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json','Content-type': 'application/json'}
+        verify_ssl = Settings.instance.disable_ssl_verification
+        f.ssl.verify = !verify_ssl unless verify_ssl.nil?
+        f.request :multipart
+        f.request :url_encoded
+        f.adapter :net_http
       end
+
+      @connection
     end
   end
 end
