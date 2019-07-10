@@ -130,6 +130,7 @@ Metrics/MethodLength:
 Metrics/ModuleLength:
   Max: 250
 
+
 # Offense count: 5
 Metrics/PerceivedComplexity:
   Max: 14
