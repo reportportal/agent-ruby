@@ -2,8 +2,8 @@ source 'https://rubygems.org'
 
 gemspec
 
-gem 'faraday'
 gem 'cucumber', '~> 3'
+gem 'faraday'
 gem 'log4r'
 gem 'logging'
 gem 'parallel_tests', '~> 2.15.0'

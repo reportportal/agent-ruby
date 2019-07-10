@@ -45,7 +45,7 @@ module ReportPortal
     end
 
     def finish_launch(end_time = now)
-      self.logger.debug "finish_launch: [#{end_time}]"
+      logger.debug "finish_launch: [#{end_time}]"
       data = { end_time: end_time }
       process_request("launch/#{@launch_id}/finish",:put,data.to_json)
     end
@@ -60,9 +60,8 @@ module ReportPortal
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
-
       if item.nil? || item.id.nil? || item.closed
-        self.logger.debug "finish_item: Item details are missing or already closed"
+        logger.debug 'finish_item: Item details are missing or already closed'
       else
         data = { end_time: end_time.nil? ? now : end_time }
         data[:status] = status unless status.nil?
@@ -71,14 +70,14 @@ module ReportPortal
         elsif status == :skipped
           data[:issue] = { issue_type: 'NOT_ISSUE' }
         end
-        self.logger.debug "finish_item:id[#{item}], data: #{data} "
+        logger.debug "finish_item:id[#{item}], data: #{data} "
         begin
           response = process_request("item/#{item.id}", :put, data.to_json)
-          self.logger.debug "finish_item: response [#{response}] "
+          logger.debug "finish_item: response [#{response}] "
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
 
-          raise e unless response['error_code'] == 40018
+          raise e unless response['error_code'] == 40_018
         end
         item.closed = true
       end
@@ -90,26 +89,35 @@ module ReportPortal
       @logger.debug "send_log: [#{status}],[#{message}], #{@current_scenario} "
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
-        process_request("log",:post,data.to_json)
+        process_request('log',:post,data.to_json)
       end
     end
 
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
       unless File.file?(path)
+        if mime_type =~ /;base64$/
+          mime_type = mime_type[0..-8]
+          path = Base64.decode64(path)
+        end
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
         temp = Tempfile.open(['file', extension])
         temp.binmode
-        temp.write(Base64.decode64(path))
+        temp.write(path)
         temp.rewind
         path = temp
       end
-        file_name = File.basename(path)
-        label ||= file_name
-        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: "#{file_name}" }, "Content-Type": 'application/json' }
-        headers = {'Content-Type': 'multipart/form-data'}
-        payload = { :json_request_part => [json].to_json,
-                    file_name => Faraday::UploadIO.new(path, mime_type)  }
-        process_request("log",:post,payload, headers)
+      file_name = File.basename(path)
+      label ||= file_name
+      json = { level: status_to_level(status),
+               message: label,
+               item_id: @current_scenario.id,
+               time: time,
+               file: { name: file_name.to_s },
+               "Content-Type": 'application/json' }
+      headers = {'Content-Type': 'multipart/form-data'}
+      payload = { :json_request_part => [json].to_json,
+                  file_name => Faraday::UploadIO.new(path, mime_type) }
+      process_request('log',:post,payload, headers)
     end
 
     def get_item(name, parent_node)
@@ -127,7 +135,7 @@ module ReportPortal
 
     def item_id_of(name, parent_node)
       data = get_item(name, parent_node)
-          if data.key? 'content'
+      if data.key? 'content'
         data['content'].empty? ? nil : data['content'][0]['id']
       else
         nil # item isn't started yet
@@ -135,7 +143,7 @@ module ReportPortal
     end
 
     def close_child_items(parent_id)
-      self.logger.debug "closing child items: #{parent_id} "
+      logger.debug "closing child items: #{parent_id} "
       if parent_id.nil?
         url = "item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"
       else
@@ -170,20 +178,20 @@ module ReportPortal
       begin
         response = rp_client.send(method, path, *options)
       rescue RestClient::Exception => e
-        self.logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
-        self.logger.error("TRACE[#{e.backtrace}]")
+        logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
+        logger.error("TRACE[#{e.backtrace}]")
         response = JSON.parse(e.response)
         m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
         if m
           parent_time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
           data = JSON.parse(options[0])
-          self.logger.warn("RP error : 40025, time of a child: [#{data['start_time']}], paren time: [#{(parent_time.to_f * 1000).to_i}]")
+          logger.warn("RP error : 40025, time of a child: [#{data['start_time']}], paren time: [#{(parent_time.to_f * 1000).to_i}]")
           data['start_time'] = (parent_time.to_f * 1000).to_i + 1000
           options[0] = data.to_json
           ReportPortal.last_used_time = data['start_time']
         else
-          self.logger.error("RestClient::Exception -> response: [#{response}]")
-          self.logger.error("TRACE[#{e.backtrace}]")
+          logger.error("RestClient::Exception -> response: [#{response}]")
+          logger.error("TRACE[#{e.backtrace}]")
           raise
         end
 
@@ -192,10 +200,9 @@ module ReportPortal
       JSON.parse(response.body)
     end
 
-
     def rp_client
-      @connection ||= Faraday.new(url: Settings.instance.project_url) do  |f|
-        f.headers={Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json','Content-type': 'application/json'}
+      @connection ||= Faraday.new(url: Settings.instance.project_url) do |f|
+        f.headers = {Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json','Content-type': 'application/json'}
         verify_ssl = Settings.instance.disable_ssl_verification
         f.ssl.verify = !verify_ssl unless verify_ssl.nil?
         f.request :multipart

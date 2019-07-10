@@ -41,6 +41,7 @@ module ReportPortal
             if monotonic_time - start_time > wait_time_for_launch_create
               raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_create} seconds"
             end
+
             @logger.debug "File with launch ID wasn't created after waiting #{monotonic_time - start_time} seconds"
 
             sleep 0.5
@@ -50,7 +51,6 @@ module ReportPortal
           add_process_description
         end
       end
-
 
       def start_launch(desired_time, cmd_args = ARGV)
         # Expected behavior that make sense:
@@ -233,16 +233,17 @@ module ReportPortal
         runner_process ||= get_cucumber_test_process(process_list)
         @logger.debug("Cucumber runner pid: #{runner_process.pid}") if runner_process
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
+
         @pid_of_parallel_tests = runner_process.pid
       end
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
-          if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
-            @parallel = true
-            @logger.debug("get_parallel_test_process: #{process.cmdline}")
-            return process
-          end
+          next unless process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+
+          @parallel = true
+          @logger.debug("get_parallel_test_process: #{process.cmdline}")
+          return process
         end
         nil
       end
@@ -348,19 +349,13 @@ module ReportPortal
             begin
               item = ReportPortal.remote_item(node.content[:id])
               @logger.debug("started_launch?: [#{started_launch}], item details: [#{item}]")
-              if started_launch
-                if item.key?('end_time')
-                  @logger.warn("Main process: item already closed skipping.")
-                else
-                  ReportPortal.close_child_items(node.content[:id])
-                  ReportPortal.finish_item(node.content)
-                end
+              if item.key?('end_time')
+                started_launch ? @logger.warn("Main process: item already closed skipping.") : ReportPortal.finish_item(node.content)
+              elsif started_launch
+                ReportPortal.close_child_items(node.content[:id])
+                ReportPortal.finish_item(node.content)
               else
-                if item.key?('end_time')
-                  ReportPortal.finish_item(node.content)
-                else
-                  @logger.warn("Child process: item in use cannot close it. [#{item}]")
-                end
+                @logger.warn("Child process: item in use cannot close it. [#{item}]")
               end
             end
           end
