@@ -60,7 +60,10 @@ module ReportPortal
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
-      unless item.nil? || item.id.nil? || item.closed
+
+      if item.nil? || item.id.nil? || item.closed
+        self.logger.debug "finish_item: Item details are missing or already closed"
+      else
         data = { end_time: end_time.nil? ? now : end_time }
         data[:status] = status unless status.nil?
         if force_issue && status != :passed # TODO: check for :passed status is probably not needed
@@ -70,7 +73,8 @@ module ReportPortal
         end
         self.logger.debug "finish_item:id[#{item}], data: #{data} "
         begin
-          process_request("item/#{item.id}", :put, data.to_json)
+          response = process_request("item/#{item.id}", :put, data.to_json)
+          self.logger.debug "finish_item: response [#{response}] "
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
 
@@ -91,7 +95,6 @@ module ReportPortal
     end
 
     def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
-      debugger
       @verbose = true
       unless File.file?(path)
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
@@ -101,12 +104,13 @@ module ReportPortal
         temp.rewind
         path = temp
       end
-      File.open(File.realpath(path), 'rb') do |file|
-        label ||= File.basename(file)
-        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
-        data = { :json_request_part => [json].to_json, File.basename(file) => file, :content_type => 'application/json' }
-        process_request("log",:post,data, content_type: 'multipart/form-data')
-      end
+        file_name = File.basename(path)
+        label ||= file_name
+        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: "#{file_name}" }, "Content-Type": 'application/json' }
+        headers = {'Content-Type': 'multipart/form-data'}
+        payload = { :json_request_part => [json].to_json,
+                    file_name => Faraday::UploadIO.new(path, mime_type)  }
+        process_request("log",:post,payload, headers)
     end
 
     def get_item(name, parent_node)
@@ -165,9 +169,8 @@ module ReportPortal
     def process_request(path, method, *options)
       tries = 5
       begin
-        response = project_resource(method, path, *options)
+        response = rp_client.send(method, path, *options)
       rescue RestClient::Exception => e
-        debugger
         self.logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
         self.logger.error("TRACE[#{e.backtrace}]")
         response = JSON.parse(e.response)
@@ -187,37 +190,9 @@ module ReportPortal
 
         retry unless (tries -= 1).zero?
       end
-      debugger if @verbose
       JSON.parse(response.body)
     end
 
-    def project_resource(method, path,*options)
-
-      # settings  = {headers: {'content_type' => 'application/json'}}
-      # pop_items = []
-      # options.each_with_index do |option, i|
-      #   if option.is_a?(Hash)
-      #     if option.key?('content_type')
-      #       pop_items.push(i)
-      #       settings[:headers]['content_type'] = option['content_type']
-      #     end
-      #   end
-      # end
-      #
-      # settings.each do |setting_name, setting_value|
-      #   if setting_value.is_a?(Hash)
-      #     setting_value.each do |key, value|
-      #       tmp = rp_client.send(setting_name).merge
-      #       rp_client.send(setting_name+ '=')
-      #     end
-      #   else
-      #
-      #   end
-      #   rp_client.send()
-      # end
-      debugger if @verbose
-      rp_client.send(method, path , *options)
-    end
 
     def rp_client
       @connection ||= Faraday.new(url: Settings.instance.project_url) do  |f|

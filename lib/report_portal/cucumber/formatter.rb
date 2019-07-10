@@ -40,12 +40,7 @@ module ReportPortal
         @thread = Thread.new do
           loop do
             method_arr = @queue.pop
-            begin
             report.public_send(*method_arr)
-            rescue => e
-              debugger
-              puts e
-            end 
           end
         end
         @thread.abort_on_exception = true

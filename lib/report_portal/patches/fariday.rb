@@ -1,6 +1,5 @@
 class Faraday::Request::Multipart
   def create_multipart(env, params)
-    debugger
     boundary = env.request.boundary
     parts = process_params(params) do |key, value|
       if (JSON.parse(value) rescue false)
@@ -13,7 +12,6 @@ class Faraday::Request::Multipart
 
     body = Faraday::CompositeReadIO.new(parts)
     env.request_headers[Faraday::Env::ContentLength] = body.length.to_s
-    debugger
     return body
   end
 end

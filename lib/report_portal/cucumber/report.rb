@@ -184,6 +184,8 @@ module ReportPortal
             @logger.info("close launch , delete lock")
             complete_launch(desired_time)
           end
+        else
+          complete_launch(desired_time)
         end
       end
 
@@ -194,6 +196,7 @@ module ReportPortal
       end
 
       def puts(message, desired_time)
+        ReportPortal.send_log(:info, message, time_to_send(desired_time))
         ReportPortal.send_log(:info, message, time_to_send(desired_time))
       end
 
@@ -345,8 +348,7 @@ module ReportPortal
           unless node.is_root? || node.content.closed
             begin
               item = ReportPortal.remote_item(node.content[:id])
-              @logger.debug("item details: [#{item}]")
-              @logger.debug("Start launch: [#{started_launch}], item[:status] [#{item['status']}]")
+              @logger.debug("started_launch?: [#{started_launch}], item details: [#{item}]")
               if started_launch
                 if item.key?('end_time')
                   @logger.warn("Main process: item already closed skipping.")
