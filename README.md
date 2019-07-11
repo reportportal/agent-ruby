@@ -30,10 +30,16 @@ Add `gem 'reportportal', git: 'https://github.com/reportportal/agent-ruby.git'` 
 
 ```cucumber <other options> -f ReportPortal::Cucumber::Formatter -o '<log_file>'```
 
-* With Cucumber and parallel_tests gem:
+* With Cucumber (Advanced)
 
-```parallel_cucumber <some options> -o '<some other options> -f ReportPortal::Cucumber::Formatter'```
-
+```ruby
+AfterConfiguration do |config|
+  ...
+  #rp_log_file = <Generated or from ENV>
+  ...
+  config.formats.push(["ReportPortal::Cucumber::Formatter", {}, rp_log_file])
+end 
+```
 * With RSpec:
 
 ```rspec <other options> -f ReportPortal::RSpec::Formatter```
@@ -54,6 +60,7 @@ Supported settings:
  - launch_id - id of previously created launch (to be used if formatter_modes contains attach_to_launch)
  - file_with_launch_id - path to file with id of launch (to be used if formatter_modes contains attach_to_launch)
  - disable_ssl_verification - set to true to disable SSL verification on connect to ReportPortal (potential security hole!). Set `disable_ssl_verification` to `true` if you see the following error:
+ - launch_uuid - when formatter_mode is `attach_to_launch`, launch_uuid will be used to create uniq report group(tmp dir should be shared across all lunches)
  - log_level - this is log level for report_portal agent (useful for troubleshooting issued when run in parallel mode)
 ```
 Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish produced an exception: RestClient::SSLCertificateNotVerified: SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
@@ -81,14 +88,15 @@ The following modes are supported:
 <tr>
 <td>attach_to_launch</td>
 <td>
-Add executing features/scenarios to an existing launch. 
-Use following options to configure that. 
+Add executing features/scenarios to same launch. 
+Use following options are available to configure that. 
 
     1. launch_id
     2. file_with_launch_id 
-    3. rp_launch_id.tmp in `Dir.tmpdir` 
+    3. launch_uuid
+    4. rp_launch_id_for_<fisrt process pid>.lock in `Dir.tmpdir` 
     
-   If above options not present client will create new launch
+    *** If launch is not created, cucumber process will create one. Such that user does not need to worry about creating new launch.
 </td>
 </tr>
 <tr>

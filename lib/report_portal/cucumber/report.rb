@@ -216,10 +216,8 @@ module ReportPortal
         @logger.debug("Lock file (RReportPortal::Settings.instance.file_with_launch_id): #{file_path}") if file_path
         file_path ||= Dir.tmpdir + "/report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
         @logger.debug("Lock file (ReportPortal::Settings.instance.launch_uuid): #{file_path}") if file_path
-        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock" if @pid_of_parallel_tests
-        @logger.debug("Lock file (/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock): #{file_path}") if file_path
-        file_path ||= Dir.tmpdir + '/rp_launch_id.tmp'
-        @logger.debug("Lock file (/rp_launch_id.tmp): #{file_path}") if file_path
+        file_path ||= Dir.tmpdir + "/rp_launch_id_for_#{@pid_of_parallel_tests}.lock" if @pid_of_parallel_tests
+        @logger.debug("Lock file (/rp_launch_id_for_#{@pid_of_parallel_tests}.lock): #{file_path}") if file_path
 
         file_path
       end
