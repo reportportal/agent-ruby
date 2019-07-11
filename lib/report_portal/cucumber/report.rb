@@ -15,7 +15,6 @@ module ReportPortal
     # @api private
     class Report
       attr_accessor :parallel, :started_launch
-      @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
 
       def attach_to_launch?
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
