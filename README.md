@@ -94,7 +94,7 @@ Use following options are available to configure that.
     1. launch_id
     2. file_with_launch_id 
     3. launch_uuid
-    4. rp_launch_id_for_<fisrt process pid>.lock in `Dir.tmpdir` 
+    4. rp_launch_id_for_<first process pid>.lock in `Dir.tmpdir` 
     
     *** If launch is not created, cucumber process will create one. Such that user does not need to worry about creating new launch.
 </td>

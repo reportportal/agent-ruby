@@ -14,13 +14,8 @@ Gem::Specification.new do |s|
   s.required_ruby_version  = '>= 2.3.0'
   s.license                = 'Apache-2.0'
 
-  s.add_runtime_dependency('cucumber', '~> 3.0')
   s.add_runtime_dependency('faraday', '~> 0.13')
-  s.add_runtime_dependency('logging', '~> 2.2')
-  s.add_runtime_dependency('parallel_tests', '~> 2.15')
-  s.add_runtime_dependency('rspec', '~> 3.8')
   s.add_runtime_dependency('rubytree', '~> 1.0')
-  s.add_runtime_dependency('sys-proctable', '1.1.5')
 
   s.add_development_dependency('rubocop', '0.71')
 end
