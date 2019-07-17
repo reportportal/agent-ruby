@@ -33,21 +33,21 @@ module ReportPortal
 
     def start_launch(description, start_time = now)
       data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
-      @launch_id = process_request('launch',:post,data.to_json)['id']
+      @launch_id = process_request('launch', :post, data.to_json)['id']
     end
 
     def remote_launch
-      process_request("launch/#{@launch_id}",:get)
+      process_request("launch/#{@launch_id}", :get)
     end
 
     def update_launch(data)
-      process_request("launch/#{@launch_id}/update",:put, data.to_json)
+      process_request("launch/#{@launch_id}/update", :put, data.to_json)
     end
 
     def finish_launch(end_time = now)
       logger.debug "finish_launch: [#{end_time}]"
       data = { end_time: end_time }
-      process_request("launch/#{@launch_id}/finish",:put,data.to_json)
+      process_request("launch/#{@launch_id}/finish", :put, data.to_json)
     end
 
     def start_item(item_node)
@@ -56,7 +56,7 @@ module ReportPortal
       data[:tags] = item.tags unless item.tags.empty?
       url = 'item'
       url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
-      process_request(url,:post,data.to_json)['id']
+      process_request(url, :post, data.to_json)['id']
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
@@ -89,7 +89,7 @@ module ReportPortal
       @logger.debug "send_log: [#{status}],[#{message}], #{@current_scenario} "
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
-        process_request('log',:post,data.to_json)
+        process_request('log', :post, data.to_json)
       end
     end
 
@@ -117,7 +117,7 @@ module ReportPortal
       headers = {'Content-Type': 'multipart/form-data'}
       payload = { :json_request_part => [json].to_json,
                   file_name => Faraday::UploadIO.new(path, mime_type) }
-      process_request('log',:post,payload, headers)
+      process_request('log', :post, payload, headers)
     end
 
     def get_item(name, parent_node)
@@ -126,11 +126,11 @@ module ReportPortal
       else
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
-      process_request(url,:get)
+      process_request(url, :get)
     end
 
     def remote_item(item_id)
-      process_request("item/#{item_id}",:get)
+      process_request("item/#{item_id}", :get)
     end
 
     def item_id_of(name, parent_node)
@@ -151,7 +151,7 @@ module ReportPortal
       end
       ids = []
       loop do
-        response = process_request(url,:get)
+        response = process_request(url, :get)
         if response.key?('links')
           link = response['links'].find { |i| i['rel'] == 'next' }
           url = link.nil? ? nil : link['href']
@@ -202,7 +202,7 @@ module ReportPortal
 
     def rp_client
       @connection ||= Faraday.new(url: Settings.instance.project_url) do |f|
-        f.headers = {Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json','Content-type': 'application/json'}
+        f.headers = {Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json', 'Content-type': 'application/json'}
         verify_ssl = Settings.instance.disable_ssl_verification
         f.ssl.verify = !verify_ssl unless verify_ssl.nil?
         f.request :multipart

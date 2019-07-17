@@ -1,5 +1,3 @@
-require 'cucumber/formatter/io'
-require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
 require 'tempfile'
