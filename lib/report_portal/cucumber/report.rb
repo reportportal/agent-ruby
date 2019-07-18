@@ -50,18 +50,18 @@ module ReportPortal
       end
 
       def start_launch(desired_time, cmd_args = ARGV)
-        # Expected behavior that make sense:
-        #  1. If launch_id present attach to existing (simple use case)
-        #  2. If launch_id not present check if exist rp_launch_id.tmp
-        #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
             if ReportPortal::Settings.instance.launch_id
               ReportPortal::Settings.instance.launch_id
             else
-              self.started_launch = true
               file_path = lock_file
-              File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
+              if File.file?(file_path)
+                read_lock_file(file_path)
+              else
+                self.started_launch = true
+                new_launch(desired_time, cmd_args, file_path)
+              end
             end
           @logger.info "Attaching to launch #{ReportPortal.launch_id}"
         else
