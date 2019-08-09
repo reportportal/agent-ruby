@@ -5,7 +5,7 @@ require 'pathname'
 require 'tempfile'
 
 require_relative 'report_portal/settings'
-require_relative 'report_portal/patches/fariday'
+require_relative 'report_portal/patches/faraday'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
