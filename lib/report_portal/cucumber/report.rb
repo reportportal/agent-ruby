@@ -228,14 +228,12 @@ module ReportPortal
         runner_process ||= get_cucumber_test_process(process_list)
         @logger.debug("Cucumber runner pid: #{runner_process.pid}") if runner_process
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
-
         @pid_of_parallel_tests = runner_process.pid
       end
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
           next unless process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
-
           @parallel = true
           @logger.debug("get_parallel_test_process: #{process.cmdline}")
           return process
