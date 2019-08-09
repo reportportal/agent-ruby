@@ -14,8 +14,8 @@ Gem::Specification.new do |s|
   s.required_ruby_version  = '>= 2.3.0'
   s.license                = 'Apache-2.0'
 
-  s.add_dependency('rest-client', '~> 2.0')
-  s.add_dependency('rubytree', '>=0.9.3')
+  s.add_runtime_dependency('faraday', '~> 0.13')
+  s.add_runtime_dependency('rubytree', '~> 1.0')
 
   s.add_development_dependency('rubocop', '0.71')
 end

@@ -7,7 +7,7 @@ module ReportPortal
     class Formatter
       # @api private
       def initialize(config)
-        @logger ||= Logger.new(config.out_stream)
+        @logger = Logger.new(config.out_stream)
         @logger.level = ReportPortal::Settings.instance.log_level || :warn
         setup_message_processing
 
