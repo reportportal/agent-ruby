@@ -60,7 +60,7 @@ Supported settings:
  - launch_id - id of previously created launch (to be used if formatter_modes contains attach_to_launch)
  - file_with_launch_id - path to file with id of launch (to be used if formatter_modes contains attach_to_launch)
  - disable_ssl_verification - set to true to disable SSL verification on connect to ReportPortal (potential security hole!). Set `disable_ssl_verification` to `true` if you see the following error:
- - launch_uuid - when formatter_mode is `attach_to_launch`, launch_uuid will be used to create uniq report group(tmp dir should be shared across all lunches)
+ - launch_uuid - when formatter_modes contains `attach_to_launch`, launch_uuid will be used to create uniq report group (tmp dir should be shared across all launches)
  - log_level - this is log level for report_portal agent (useful for troubleshooting issues when run in parallel mode)
 ```
 Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish produced an exception: RestClient::SSLCertificateNotVerified: SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
