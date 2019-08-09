@@ -77,7 +77,7 @@ module ReportPortal
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
 
-          raise e unless response['error_code'] == 40_018
+          raise e unless response['error_code'] == 40018
         end
         item.closed = true
       end
