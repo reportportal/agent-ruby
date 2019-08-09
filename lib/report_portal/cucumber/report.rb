@@ -1,5 +1,3 @@
-require 'cucumber/formatter/io'
-require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
 require 'tempfile'
@@ -15,7 +13,6 @@ module ReportPortal
     # @api private
     class Report
       attr_accessor :parallel, :started_launch
-      @folder_creation_tracking_file = Pathname(Dir.tmpdir) + "folder_creation_tracking.lck"
 
       def attach_to_launch?
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
@@ -41,6 +38,7 @@ module ReportPortal
             if monotonic_time - start_time > wait_time_for_launch_create
               raise "File with launch ID wasn't created after waiting #{wait_time_for_launch_create} seconds"
             end
+
             @logger.debug "File with launch ID wasn't created after waiting #{monotonic_time - start_time} seconds"
 
             sleep 0.5
@@ -51,20 +49,19 @@ module ReportPortal
         end
       end
 
-
       def start_launch(desired_time, cmd_args = ARGV)
-        # Expected behavior that make sense:
-        #  1. If launch_id present attach to existing (simple use case)
-        #  2. If launch_id not present check if exist rp_launch_id.tmp
-        #  3. [ADDED] If launch_id is not present check if lock exist with launch_uuid
         if attach_to_launch?
           ReportPortal.launch_id =
             if ReportPortal::Settings.instance.launch_id
               ReportPortal::Settings.instance.launch_id
             else
-              self.started_launch = true
               file_path = lock_file
-              File.file?(file_path) ? read_lock_file(file_path) : new_launch(desired_time, cmd_args, file_path)
+              if File.file?(file_path)
+                read_lock_file(file_path)
+              else
+                self.started_launch = true
+                new_launch(desired_time, cmd_args, file_path)
+              end
             end
           @logger.info "Attaching to launch #{ReportPortal.launch_id}"
         else
@@ -217,10 +214,8 @@ module ReportPortal
         @logger.debug("Lock file (RReportPortal::Settings.instance.file_with_launch_id): #{file_path}") if file_path
         file_path ||= Dir.tmpdir + "/report_portal_#{ReportPortal::Settings.instance.launch_uuid}.lock" if ReportPortal::Settings.instance.launch_uuid
         @logger.debug("Lock file (ReportPortal::Settings.instance.launch_uuid): #{file_path}") if file_path
-        file_path ||= Dir.tmpdir + "/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock" if @pid_of_parallel_tests
-        @logger.debug("Lock file (/parallel_launch_id_for_#{@pid_of_parallel_tests}.lock): #{file_path}") if file_path
-        file_path ||= Dir.tmpdir + '/rp_launch_id.tmp'
-        @logger.debug("Lock file (/rp_launch_id.tmp): #{file_path}") if file_path
+        file_path ||= Dir.tmpdir + "/rp_launch_id_for_#{@pid_of_parallel_tests}.lock" if @pid_of_parallel_tests
+        @logger.debug("Lock file (/rp_launch_id_for_#{@pid_of_parallel_tests}.lock): #{file_path}") if file_path
 
         file_path
       end
@@ -238,11 +233,10 @@ module ReportPortal
 
       def get_parallel_test_process(process_list)
         process_list.each do |process|
-          if process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
-            @parallel = true
-            @logger.debug("get_parallel_test_process: #{process.cmdline}")
-            return process
-          end
+          next unless process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+          @parallel = true
+          @logger.debug("get_parallel_test_process: #{process.cmdline}")
+          return process
         end
         nil
       end
@@ -348,19 +342,13 @@ module ReportPortal
             begin
               item = ReportPortal.remote_item(node.content[:id])
               @logger.debug("started_launch?: [#{started_launch}], item details: [#{item}]")
-              if started_launch
-                if item.key?('end_time')
-                  @logger.warn("Main process: item already closed skipping.")
-                else
-                  ReportPortal.close_child_items(node.content[:id])
-                  ReportPortal.finish_item(node.content)
-                end
+              if item.key?('end_time')
+                started_launch ? @logger.warn("Main process: item already closed skipping.") : ReportPortal.finish_item(node.content)
+              elsif started_launch
+                ReportPortal.close_child_items(node.content[:id])
+                ReportPortal.finish_item(node.content)
               else
-                if item.key?('end_time')
-                  ReportPortal.finish_item(node.content)
-                else
-                  @logger.warn("Child process: item in use cannot close it. [#{item}]")
-                end
+                @logger.warn("Child process: item in use cannot close it. [#{item}]")
               end
             end
           end
