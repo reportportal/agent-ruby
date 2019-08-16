@@ -65,10 +65,6 @@ module ReportPortal
       def use_same_thread_for_reporting?
         ReportPortal::Settings.instance.formatter_modes.include?('use_same_thread_for_reporting')
       end
-
-      def client
-        @client ||= ReportPortal::Client.new(@logger)
-      end
     end
   end
 end

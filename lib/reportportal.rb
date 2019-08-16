@@ -2,7 +2,9 @@ require 'json'
 require 'uri'
 require 'pathname'
 require 'tempfile'
+require 'faraday'
 
+require_relative 'report_portal/patches/faraday'
 require_relative 'report_portal/settings'
 require_relative 'report_portal/client'
 
@@ -12,7 +14,7 @@ module ReportPortal
   class << self
     attr_accessor :launch_id, :current_scenario, :last_used_time, :logger
 
-    def initialize(logger) # tried 1. initialize, 2. new, 3. self.initialize, 4. self.new
+    def initialize(logger)
       @logger = logger
       @client = ReportPortal::Client.new(logger)
     end
@@ -79,8 +81,7 @@ module ReportPortal
           logger.debug "finish_item: response [#{response}] "
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
-
-          raise e unless response['error_code'] == 40018
+          raise e unless response['error_code'] == 40_018
         end
         item.closed = true
       end
@@ -117,11 +118,9 @@ module ReportPortal
                time: time,
                file: { name: file_name.to_s },
                "Content-Type": 'application/json' }
-      headers = {'Content-Type': 'multipart/form-data'}
       payload = { 'json_request_part': [json].to_json,
                   file_name => Faraday::UploadIO.new(path, mime_type) }
-      debugger
-      @client.process_request('log', :post, payload, headers)
+      @client.process_request('log', :post, payload, content_type: 'multipart/form-data')
     end
 
     def get_item(name, parent_node)
