@@ -1,15 +1,15 @@
 module Faraday
-  class Requests
+  class Request
     # Middleware for supporting multi-part requests.
     class Multipart
       def create_multipart(env, params)
         boundary = env.request.boundary
         parts = process_params(params) do |key, value|
           if begin
-                JSON.parse(value)
+            JSON.parse(value)
              rescue StandardError
                false
-              end
+          end
             Faraday::Parts::Part.new(boundary, key, value, 'Content-Type' => 'application/json')
           else
             Faraday::Parts::Part.new(boundary, key, value)

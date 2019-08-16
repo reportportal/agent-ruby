@@ -21,7 +21,7 @@ module ReportPortal
       def initialize(logger)
         @logger = logger
         ReportPortal.last_used_time = 0
-        ReportPortal.logger = logger
+        ReportPortal.initialize(logger)
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
 
@@ -228,6 +228,7 @@ module ReportPortal
         runner_process ||= get_cucumber_test_process(process_list)
         @logger.debug("Cucumber runner pid: #{runner_process.pid}") if runner_process
         raise 'Failed to find any cucumber related test process' if runner_process.nil?
+
         @pid_of_parallel_tests = runner_process.pid
       end
 

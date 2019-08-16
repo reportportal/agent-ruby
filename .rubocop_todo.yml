@@ -8,72 +8,10 @@
 
 # Offense count: 2
 # Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, IndentationWidth.
-# SupportedStyles: with_first_argument, with_fixed_indentation
-Layout/AlignArguments:
-  Exclude:
-    - 'lib/report_portal/rspec/formatter.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
 Layout/EmptyLineAfterGuardClause:
   Exclude:
     - 'lib/report_portal/cucumber/json_slurper.rb'
     - 'tests/features/step_definitions/steps.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment, AllowBeforeTrailingComments, ForceEqualSignAlignment.
-Layout/ExtraSpacing:
-  Exclude:
-    - 'lib/report_portal/logging/logging_appender.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-Layout/LeadingCommentSpace:
-  Enabled: true
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, IndentationWidth.
-# SupportedStyles: aligned, indented
-Layout/MultilineOperationIndentation:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-
-# Offense count: 3
-# Cop supports --auto-correct.
-Layout/SpaceAfterComma:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/reportportal.rb'
-    - 'tests/formatter_spec.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: space, no_space
-Layout/SpaceAroundEqualsInParameterDefault:
-  Exclude:
-    - 'lib/reportportal.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment.
-Layout/SpaceAroundOperators:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/report_portal/logging/logging_appender.rb'
-    - 'lib/report_portal/rspec/formatter.rb'
-
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SpaceBeforeBlockParameters.
-# SupportedStyles: space, no_space
-# SupportedStylesForEmptyBraces: space, no_space
-Layout/SpaceInsideBlockBraces:
-  Exclude:
-    - 'tests/formatter_spec.rb'
 
 # Offense count: 5
 # Cop supports --auto-correct.
