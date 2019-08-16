@@ -18,6 +18,7 @@ module Faraday
         parts << Faraday::Parts::EpiloguePart.new(boundary)
         body = Faraday::CompositeReadIO.new(parts)
         env.request_headers[Faraday::Env::ContentLength] = body.length.to_s
+        debugger
         body
       end
     end

@@ -1,18 +1,21 @@
 require 'json'
-require 'faraday'
 require 'uri'
 require 'pathname'
 require 'tempfile'
 
 require_relative 'report_portal/settings'
-require_relative 'report_portal/patches/faraday'
+require_relative 'report_portal/client'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
   class << self
     attr_accessor :launch_id, :current_scenario, :last_used_time, :logger
-    @verbose = false
+
+    def initialize(logger) # tried 1. initialize, 2. new, 3. self.initialize, 4. self.new
+      @logger = logger
+      @client = ReportPortal::Client.new(logger)
+    end
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -33,21 +36,21 @@ module ReportPortal
 
     def start_launch(description, start_time = now)
       data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
-      @launch_id = process_request('launch', :post, data.to_json)['id']
+      @launch_id = @client.process_request('launch', :post, data.to_json)['id']
     end
 
     def remote_launch
-      process_request("launch/#{@launch_id}", :get)
+      @client.process_request("launch/#{@launch_id}", :get)
     end
 
     def update_launch(data)
-      process_request("launch/#{@launch_id}/update", :put, data.to_json)
+      @client.process_request("launch/#{@launch_id}/update", :put, data.to_json)
     end
 
     def finish_launch(end_time = now)
       logger.debug "finish_launch: [#{end_time}]"
       data = { end_time: end_time }
-      process_request("launch/#{@launch_id}/finish", :put, data.to_json)
+      @client.process_request("launch/#{@launch_id}/finish", :put, data.to_json)
     end
 
     def start_item(item_node)
@@ -56,7 +59,7 @@ module ReportPortal
       data[:tags] = item.tags unless item.tags.empty?
       url = 'item'
       url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
-      process_request(url, :post, data.to_json)['id']
+      @client.process_request(url, :post, data.to_json)['id']
     end
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil)
@@ -72,7 +75,7 @@ module ReportPortal
         end
         logger.debug "finish_item:id[#{item}], data: #{data} "
         begin
-          response = process_request("item/#{item.id}", :put, data.to_json)
+          response = @client.process_request("item/#{item.id}", :put, data.to_json)
           logger.debug "finish_item: response [#{response}] "
         rescue RestClient::Exception => e
           response = JSON.parse(e.response)
@@ -89,7 +92,7 @@ module ReportPortal
       @logger.debug "send_log: [#{status}],[#{message}], #{@current_scenario} "
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
-        process_request('log', :post, data.to_json)
+        @client.process_request('log', :post, data.to_json)
       end
     end
 
@@ -115,9 +118,10 @@ module ReportPortal
                file: { name: file_name.to_s },
                "Content-Type": 'application/json' }
       headers = {'Content-Type': 'multipart/form-data'}
-      payload = { :json_request_part => [json].to_json,
+      payload = { 'json_request_part': [json].to_json,
                   file_name => Faraday::UploadIO.new(path, mime_type) }
-      process_request('log', :post, payload, headers)
+      debugger
+      @client.process_request('log', :post, payload, headers)
     end
 
     def get_item(name, parent_node)
@@ -126,11 +130,11 @@ module ReportPortal
       else
         url = "item?filter.eq.launch=#{@launch_id}&filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
       end
-      process_request(url, :get)
+      @client.process_request(url, :get)
     end
 
     def remote_item(item_id)
-      process_request("item/#{item_id}", :get)
+      @client.process_request("item/#{item_id}", :get)
     end
 
     def item_id_of(name, parent_node)
@@ -151,7 +155,7 @@ module ReportPortal
       end
       ids = []
       loop do
-        response = process_request(url, :get)
+        response = @client.process_request(url, :get)
         if response.key?('links')
           link = response['links'].find { |i| i['rel'] == 'next' }
           url = link.nil? ? nil : link['href']
@@ -169,48 +173,6 @@ module ReportPortal
         # temporary, we actually only need the id
         finish_item(TestItem.new(nil, nil, id, nil, nil, nil, nil))
       end
-    end
-
-    private
-
-    def process_request(path, method, *options)
-      tries = 5
-      begin
-        response = rp_client.send(method, path, *options)
-      rescue RestClient::Exception => e
-        logger.warn("Exception[#{e}],class:[#{e.class}],class:[#{e.class}], retry_count: [#{tries}]")
-        logger.error("TRACE[#{e.backtrace}]")
-        response = JSON.parse(e.response)
-        m = response['message'].match(%r{Start time of child \['(.+)'\] item should be same or later than start time \['(.+)'\] of the parent item\/launch '.+'})
-        if m
-          parent_time = Time.strptime(m[2], '%a %b %d %H:%M:%S %z %Y')
-          data = JSON.parse(options[0])
-          logger.warn("RP error : 40025, time of a child: [#{data['start_time']}], paren time: [#{(parent_time.to_f * 1000).to_i}]")
-          data['start_time'] = (parent_time.to_f * 1000).to_i + 1000
-          options[0] = data.to_json
-          ReportPortal.last_used_time = data['start_time']
-        else
-          logger.error("RestClient::Exception -> response: [#{response}]")
-          logger.error("TRACE[#{e.backtrace}]")
-          raise
-        end
-
-        retry unless (tries -= 1).zero?
-      end
-      JSON.parse(response.body)
-    end
-
-    def rp_client
-      @connection ||= Faraday.new(url: Settings.instance.project_url) do |f|
-        f.headers = {Authorization: "Bearer #{Settings.instance.uuid}", Accept: 'application/json', 'Content-type': 'application/json'}
-        verify_ssl = Settings.instance.disable_ssl_verification
-        f.ssl.verify = !verify_ssl unless verify_ssl.nil?
-        f.request :multipart
-        f.request :url_encoded
-        f.adapter :net_http
-      end
-
-      @connection
     end
   end
 end
