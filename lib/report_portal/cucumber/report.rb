@@ -235,6 +235,7 @@ module ReportPortal
       def get_parallel_test_process(process_list)
         process_list.each do |process|
           next unless process.cmdline.match(%r{bin(?:\/|\\)parallel_(?:cucumber|test)(.+)})
+
           @parallel = true
           @logger.debug("get_parallel_test_process: #{process.cmdline}")
           return process
