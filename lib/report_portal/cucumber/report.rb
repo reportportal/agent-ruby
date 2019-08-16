@@ -21,7 +21,7 @@ module ReportPortal
       def initialize(logger)
         @logger = logger
         ReportPortal.last_used_time = 0
-        ReportPortal.logger = logger
+        ReportPortal.initialize(logger)
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
 
