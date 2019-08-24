@@ -1,10 +1,10 @@
 require 'json'
-require 'http'
 require 'uri'
 require 'pathname'
 require 'tempfile'
 
 require_relative 'report_portal/settings'
+require_relative 'report_portal/http_client'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
@@ -143,27 +143,11 @@ module ReportPortal
     private
 
     def send_request(verb, path, options = {})
-      if Settings.instance.disable_ssl_verification
-        options[:ssl_context] = OpenSSL::SSL::SSLContext.new
-        options[:ssl_context].verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
-      uri = "#{Settings.instance.project_url}/#{path}"
-      retries = 0
-      while retries < 3
-        begin
-          response = HTTP.auth("Bearer #{Settings.instance.uuid}").request(verb, uri, options)
-          return response.parse(:json) if response.status.success?
+      http_client.send_request(verb, path, options)
+    end
 
-          message = "Request to `#{uri}` returned code #{response.code}."
-          message << " Response:\n#{response}" unless response.to_s.empty?
-          puts message
-          retries += 1
-        rescue StandardError => e
-          puts "Request to `#{uri}` produced an exception:"
-          puts e
-          retries += 1
-        end
-      end
+    def http_client
+      @http_client ||= HttpClient.new
     end
   end
 end
