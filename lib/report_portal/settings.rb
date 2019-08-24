@@ -44,10 +44,6 @@ module ReportPortal
       setting('formatter_modes') || []
     end
 
-    def project_url
-      "#{endpoint}/#{project}"
-    end
-
     private
 
     def setting(key)
