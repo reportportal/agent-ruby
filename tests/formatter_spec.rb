@@ -8,7 +8,7 @@ end
 describe ReportPortal do
   require_relative '../lib/settings'
 
-  let(:report_portal) { ReportPortal.new(nil, IO, {:file => File.join('..', 'config', 'report_portal.yaml')}) }
+  let(:report_portal) { ReportPortal.new(nil, IO, file: File.join('..', 'config', 'report_portal.yaml')) }
 
   it 'should create launch' do
     id = report_portal.before_features(nil)
