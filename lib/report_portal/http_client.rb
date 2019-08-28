@@ -8,7 +8,7 @@ module ReportPortal
     end
 
     def send_request(verb, path, options = {})
-      path.prepend("/api/v1/#{Settings.instance.project}/")
+      path.prepend("#{origin}/api/v1/#{Settings.instance.project}/")
       3.times do
         begin
           response = @http.request(verb, path, options)
@@ -29,7 +29,7 @@ module ReportPortal
     private
 
     def create_persistent_client
-      @http = HTTP.persistent(origin).auth("Bearer #{Settings.instance.uuid}")
+      @http = HTTP.auth("Bearer #{Settings.instance.uuid}")
       add_insecure_ssl_options if Settings.instance.disable_ssl_verification
     end
 
