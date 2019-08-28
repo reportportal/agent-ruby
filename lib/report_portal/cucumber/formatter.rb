@@ -38,6 +38,7 @@ module ReportPortal
       end
 
       def setup_message_processing
+        $time = 0
         return if use_same_thread_for_reporting?
 
         @queue = Queue.new
@@ -51,6 +52,7 @@ module ReportPortal
       end
 
       def finish_message_processing
+        File.write('file.txt', $time.to_s + "\n", mode: 'a')
         return if use_same_thread_for_reporting?
 
         sleep 0.03 while !@queue.empty? || @queue.num_waiting == 0 # TODO: how to interrupt launch if the user aborted execution

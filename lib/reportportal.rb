@@ -2,6 +2,7 @@ require 'json'
 require 'uri'
 require 'pathname'
 require 'tempfile'
+require 'benchmark'
 
 require_relative 'report_portal/settings'
 require_relative 'report_portal/http_client'
@@ -143,7 +144,11 @@ module ReportPortal
     private
 
     def send_request(verb, path, options = {})
-      http_client.send_request(verb, path, options)
+      result = nil
+      $time += Benchmark.realtime do
+        result = http_client.send_request(verb, path, options)
+      end
+      result
     end
 
     def http_client
