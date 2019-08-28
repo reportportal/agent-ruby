@@ -6,38 +6,6 @@
 # Note that changes in the inspected code, or installation of new
 # versions of RuboCop, may require this file to be generated again.
 
-# Offense count: 2
-# Cop supports --auto-correct.
-Layout/EmptyLineAfterGuardClause:
-  Exclude:
-    - 'lib/report_portal/cucumber/json_slurper.rb'
-    - 'tests/features/step_definitions/steps.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.
-# SupportedStyles: space, no_space, compact
-# SupportedStylesForEmptyBraces: space, no_space
-Layout/SpaceInsideHashLiteralBraces:
-  Exclude:
-    - 'tests/formatter_spec.rb'
-
-# Offense count: 1
-Lint/ParenthesesAsGroupedExpression:
-  Exclude:
-    - 'tests/features/step_definitions/steps.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-Lint/UnneededRequireStatement:
-  Exclude:
-    - 'lib/report_portal/cucumber/formatter.rb'
-
-# Offense count: 2
-Lint/UriEscapeUnescape:
-  Exclude:
-    - 'lib/reportportal.rb'
-
 # Offense count: 15
 Metrics/AbcSize:
   Max: 106
@@ -77,19 +45,6 @@ Security/YAMLLoad:
   Exclude:
     - 'lib/report_portal/settings.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: braces, no_braces, context_dependent
-Style/BracesAroundHashParameters:
-  Exclude:
-    - 'tests/formatter_spec.rb'
-
-# Offense count: 1
-Style/CommentedKeyword:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-
 # Offense count: 7
 Style/Documentation:
   Exclude:
@@ -102,22 +57,6 @@ Style/Documentation:
     - 'lib/report_portal/rspec/formatter.rb'
     - 'lib/report_portal/settings.rb'
     - 'lib/reportportal.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty, nil, both
-Style/EmptyElse:
-  Exclude:
-    - 'lib/report_portal/cucumber/json_slurper.rb'
-    - 'lib/reportportal.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-Style/ExpandPathArguments:
-  Exclude:
-    - 'Rakefile'
-    - 'reportportal.gemspec'
 
 # Offense count: 2
 # Cop supports --auto-correct.

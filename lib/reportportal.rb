@@ -1,6 +1,6 @@
+require 'cgi'
 require 'json'
 require 'http'
-require 'uri'
 require 'pathname'
 require 'tempfile'
 
@@ -99,15 +99,13 @@ module ReportPortal
     # needed for parallel formatter
     def item_id_of(name, parent_node)
       path = if parent_node.is_root? # folder without parent folder
-               "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{URI.escape(name)}&filter.size.path=0"
+               "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{CGI.escape(name)}&filter.size.path=0"
              else
-               "item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{URI.escape(name)}"
+               "item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{CGI.escape(name)}"
              end
       data = send_request(:get, path)
       if data.key? 'content'
         data['content'].empty? ? nil : data['content'][0]['id']
-      else
-        nil # item isn't started yet
       end
     end
 

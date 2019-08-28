@@ -42,7 +42,8 @@ module ReportPortal
         end
       end
 
-      def test_case_started(event, desired_time = ReportPortal.now) # TODO: time should be a required argument
+      # TODO: time should be a required argument
+      def test_case_started(event, desired_time = ReportPortal.now)
         test_case = event.test_case
         feature = test_case.feature
         if report_hierarchy? && !same_feature_as_previous_test_case?(feature)

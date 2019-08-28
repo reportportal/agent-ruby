@@ -16,6 +16,7 @@ When(/^Step that fails on every second execution$/) do
   else
     puts "Step passed at iteration #{$odd_even}"
   end
+
   $odd_even_started = true
 end
 
@@ -27,6 +28,6 @@ When(/^Step with multiline string$/) do |str|
   puts "Step with multiline string #{str}"
 end
 
-When (/^Step with failing AfterStep hook$/) do
+When(/^Step with failing AfterStep hook$/) do
   @invoke_after_step = true
 end
