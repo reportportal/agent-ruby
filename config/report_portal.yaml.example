@@ -1,5 +1,5 @@
 uuid: 12345678-1234-1234-1234-123456789012
-endpoint: https://localhost:8080/api/v1
+endpoint: https://localhost:8080
 launch: example_launch_name
 project: default_personal
 tags: [tag1, tag2, tag3]

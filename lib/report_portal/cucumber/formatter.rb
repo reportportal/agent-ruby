@@ -1,5 +1,3 @@
-require 'thread'
-
 require_relative 'report'
 
 module ReportPortal

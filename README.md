@@ -114,6 +114,7 @@ Do not create items for folders and feature files</td>
 </tbody>
 </table>
 
+
 ## Logging
 Experimental support for three common logging frameworks was added:
 

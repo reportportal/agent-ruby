@@ -1,3 +1,5 @@
+require 'cgi'
+require 'http'
 require 'json'
 require 'uri'
 require 'pathname'
@@ -7,6 +9,7 @@ require 'faraday'
 require_relative 'report_portal/patches/faraday'
 require_relative 'report_portal/settings'
 require_relative 'report_portal/client'
+
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
@@ -18,6 +21,7 @@ module ReportPortal
       @logger = logger
       @client = ReportPortal::Client.new(logger)
     end
+
 
     def now
       (Time.now.to_f * 1000).to_i
@@ -161,7 +165,7 @@ module ReportPortal
         else
           url = nil
         end
-        response['content'].each do |i|
+        data['content'].each do |i|
           ids << i['id'] if i['has_childs'] && i['status'] == 'IN_PROGRESS'
         end
         break if url.nil?

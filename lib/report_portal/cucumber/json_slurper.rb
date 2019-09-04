@@ -13,6 +13,7 @@ module ReportPortal
       def initialize(filename)
         @json = JSON.parse(File.read(filename))
         fail "Cannot process #{filename} because it was generated without -x/--expand Cucumber option!" unless expanded?
+
         calculate_start_time
       end
 
@@ -80,8 +81,6 @@ module ReportPortal
                                  error
                                when 'undefined'
                                  "Undefined step #{step['name']} at #{step['match']['location']}"
-                               else
-                                 nil
                                end
 
               ReportPortal.send_log(step['result']['status'].to_sym,
