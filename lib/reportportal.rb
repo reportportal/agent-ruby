@@ -1,6 +1,8 @@
+require 'base64'
 require 'cgi'
 require 'http'
 require 'json'
+require 'mime/types'
 require 'pathname'
 require 'tempfile'
 require 'uri'
@@ -74,27 +76,22 @@ module ReportPortal
       end
     end
 
-    def send_file(status, path, label = nil, time = now, mime_type = 'image/png')
-      unless File.file?(path)
+    def send_file(status, path_or_src, label = nil, time = now, mime_type = 'image/png')
+      str_without_nils = path_or_src.to_s.gsub("\0", '') # file? does not allow NULLs inside the string
+      if File.file?(str_without_nils)
+        send_file_from_path(status, path_or_src, label, time)
+      else
         if mime_type =~ /;base64$/
           mime_type = mime_type[0..-8]
-          path = Base64.decode64(path)
+          path_or_src = Base64.decode64(path_or_src)
         end
         extension = ".#{MIME::Types[mime_type].first.extensions.first}"
-        temp = Tempfile.open(['file', extension])
-        temp.binmode
-        temp.write(path)
-        temp.rewind
-        path = temp
-      end
-      File.open(File.realpath(path), 'rb') do |file|
-        filename = File.basename(file)
-        json = [{ level: status_to_level(status), message: label || filename, item_id: @current_scenario.id, time: time, file: { name: filename } }]
-        form = {
-          json_request_part: HTTP::FormData::Part.new(JSON.dump(json), content_type: 'application/json'),
-          binary_part: HTTP::FormData::File.new(file, filename: filename)
-        }
-        send_request(:post, 'log', form: form)
+        Tempfile.open(['report_portal', extension]) do |tempfile|
+          tempfile.binmode
+          tempfile.write(path_or_src)
+          tempfile.rewind
+          send_file_from_path(status, tempfile.path, label, time)
+        end
       end
     end
 
@@ -141,6 +138,18 @@ module ReportPortal
     end
 
     private
+
+    def send_file_from_path(status, path, label, time)
+      File.open(File.realpath(path), 'rb') do |file|
+        filename = File.basename(file)
+        json = [{ level: status_to_level(status), message: label || filename, item_id: @current_scenario.id, time: time, file: { name: filename } }]
+        form = {
+          json_request_part: HTTP::FormData::Part.new(JSON.dump(json), content_type: 'application/json'),
+          binary_part: HTTP::FormData::File.new(file, filename: filename)
+        }
+        send_request(:post, 'log', form: form)
+      end
+    end
 
     def send_request(verb, path, options = {})
       http_client.send_request(verb, path, options)
