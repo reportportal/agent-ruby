@@ -5,7 +5,7 @@ module ReportPortal
   class Settings
     include Singleton
 
-    PREFIX = 'rp_'
+    PREFIX = 'rp_'.freeze
 
     def initialize
       filename = ENV.fetch("#{PREFIX}config") do
@@ -27,12 +27,12 @@ module ReportPortal
         # for parallel execution only
         'use_standard_logger' => false,
         'launch_id' => false,
-        'file_with_launch_id' => false,
+        'file_with_launch_id' => false
       }
 
       keys.each do |key, is_required|
         define_singleton_method(key.to_sym) { setting(key) }
-        fail "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
+        raise "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
       end
     end
 
@@ -48,7 +48,7 @@ module ReportPortal
 
     def setting(key)
       pkey = PREFIX + key
-      ENV.key?(pkey) ? YAML.load(ENV[pkey]) : @properties[key]
+      ENV.key?(pkey) ? YAML.safe_load(ENV[pkey]) : @properties[key]
     end
   end
 end

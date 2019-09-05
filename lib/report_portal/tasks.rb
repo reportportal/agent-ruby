@@ -18,7 +18,7 @@ namespace :reportportal do
     launch_id = ENV['launch_id']
     file_with_launch_id = ENV['file_with_launch_id']
     puts "Launch id isn't provided. Provide it either via launch_id or file_with_launch_id environment variables" if !launch_id && !file_with_launch_id
-    puts "Both launch_id and file_with_launch_id are present in environment variables" if launch_id && file_with_launch_id
+    puts 'Both launch_id and file_with_launch_id are present in environment variables' if launch_id && file_with_launch_id
     ReportPortal.launch_id = launch_id || File.read(file_with_launch_id)
     ReportPortal.close_child_items(nil)
     ReportPortal.finish_launch

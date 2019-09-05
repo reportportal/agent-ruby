@@ -39,12 +39,6 @@ Metrics/ModuleLength:
 Metrics/PerceivedComplexity:
   Max: 10
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Security/YAMLLoad:
-  Exclude:
-    - 'lib/report_portal/settings.rb'
-
 # Offense count: 7
 Style/Documentation:
   Exclude:
@@ -57,14 +51,6 @@ Style/Documentation:
     - 'lib/report_portal/rspec/formatter.rb'
     - 'lib/report_portal/settings.rb'
     - 'lib/reportportal.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: format, sprintf, percent
-Style/FormatString:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
 
 # Offense count: 5
 # Configuration parameters: .
@@ -102,77 +88,6 @@ Style/IfUnlessModifier:
   Exclude:
     - 'lib/report_portal/cucumber/report.rb'
     - 'tests/features/support/env.rb'
-
-# Offense count: 3
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: literals, strict
-Style/MutableConstant:
-  Exclude:
-    - 'lib/report_portal/settings.rb'
-    - 'lib/report_portal/version.rb'
-    - 'lib/reportportal.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: AutoCorrect, EnforcedStyle, IgnoredMethods.
-# SupportedStyles: predicate, comparison
-Style/NumericPredicate:
-  Exclude:
-    - 'spec/**/*'
-    - 'lib/report_portal/cucumber/formatter.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: ConvertCodeThatCanStartToReturnNil, Whitelist.
-# Whitelist: present?, blank?, presence, try, try!
-Style/SafeNavigation:
-  Exclude:
-    - 'lib/reportportal.rb'
-
-# Offense count: 9
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: only_raise, only_fail, semantic
-Style/SignalException:
-  Exclude:
-    - 'lib/report_portal/settings.rb'
-    - 'tests/features/step_definitions/steps.rb'
-    - 'tests/features/support/env.rb'
-    - 'tests/spec/test_spec.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
-# SupportedStyles: single_quotes, double_quotes
-Style/StringLiterals:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/report_portal/tasks.rb'
-
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: MinSize.
-# SupportedStyles: percent, brackets
-Style/SymbolArray:
-  EnforcedStyle: brackets
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, AllowSafeAssignment.
-# SupportedStyles: require_parentheses, require_no_parentheses, require_parentheses_when_complex
-Style/TernaryParentheses:
-  Exclude:
-    - 'lib/report_portal/cucumber/report.rb'
-    - 'lib/report_portal/rspec/formatter.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyleForMultiline.
-# SupportedStylesForMultiline: comma, consistent_comma, no_comma
-Style/TrailingCommaInHashLiteral:
-  Exclude:
-    - 'lib/report_portal/settings.rb'
 
 # Offense count: 79
 # Cop supports --auto-correct.

@@ -10,7 +10,7 @@ require_relative 'report_portal/http_client'
 
 module ReportPortal
   TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
-  LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }
+  LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }.freeze
 
   class << self
     attr_accessor :launch_id, :current_scenario
@@ -44,7 +44,7 @@ module ReportPortal
 
     def start_item(item_node)
       path = 'item'
-      path += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
+      path += "/#{item_node.parent.content.id}" unless item_node.parent&.is_root?
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?

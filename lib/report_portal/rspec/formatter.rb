@@ -21,7 +21,7 @@ module ReportPortal
       end
 
       def start(_start_notification)
-        cmd_args = ARGV.map { |arg| (arg.include? 'rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+        cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
         ReportPortal.start_launch(cmd_args)
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @current_group_node = @root_node

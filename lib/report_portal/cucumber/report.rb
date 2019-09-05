@@ -37,7 +37,7 @@ module ReportPortal
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
           description = ReportPortal::Settings.instance.description
-          description ||= ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, "rp_uuid=[FILTERED]") }.join(' ')
+          description ||= ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, 'rp_uuid=[FILTERED]') }.join(' ')
           ReportPortal.start_launch(description, time_to_send(desired_time))
         end
       end
@@ -66,7 +66,7 @@ module ReportPortal
         result = event.result
         status = result.to_sym
         issue = nil
-        if [:undefined, :pending].include?(status)
+        if %i[undefined pending].include?(status)
           status = :failed
           issue = result.message
         end
@@ -93,18 +93,18 @@ module ReportPortal
         result = event.result
         status = result.to_sym
 
-        if [:failed, :pending, :undefined].include?(status)
-          exception_info = if [:failed, :pending].include?(status)
+        if %i[failed pending undefined].include?(status)
+          exception_info = if %i[failed pending].include?(status)
                              ex = result.exception
-                             sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
+                             format("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
                            else
-                             sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
+                             format("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
                            end
           ReportPortal.send_log(:error, exception_info, time_to_send(desired_time))
         end
 
         if status != :passed
-          log_level = (status == :skipped) ? :warn : :error
+          log_level = status == :skipped ? :warn : :error
           step_type = if step?(test_step)
                         'Step'
                       else
