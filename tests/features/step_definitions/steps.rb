@@ -3,7 +3,7 @@ When(/^Passing step #(\d+)$/) do |num|
 end
 
 When(/^Failing step #(\d+)$/) do |num|
-  fail "Step #{num} failed"
+  raise "Step #{num} failed"
 end
 
 When(/^Passing step with table:$/) do |_table|
@@ -12,7 +12,7 @@ end
 
 When(/^Step that fails on every second execution$/) do
   if $odd_even.odd?
-    fail "Step failed at iteration #{$odd_even}"
+    raise "Step failed at iteration #{$odd_even}"
   else
     puts "Step passed at iteration #{$odd_even}"
   end

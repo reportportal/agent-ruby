@@ -21,11 +21,11 @@ After('@pass_after') do
 end
 
 Before('@fail_before') do
-  fail 'Failure in before hook'
+  raise 'Failure in before hook'
 end
 
 After('@fail_after') do
-  fail 'Failure in after hook'
+  raise 'Failure in after hook'
 end
 
 Before do
@@ -38,6 +38,6 @@ end
 
 AfterStep do
   if @invoke_after_step
-    fail 'I failed!'
+    raise 'I failed!'
   end
 end

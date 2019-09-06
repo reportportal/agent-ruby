@@ -11,7 +11,7 @@ module ReportPortal
 
         @io = config.out_stream
 
-        [:test_case_started, :test_case_finished, :test_step_started, :test_step_finished, :test_run_finished].each do |event_name|
+        %i[test_case_started test_case_finished test_step_started test_step_finished test_run_finished].each do |event_name|
           config.on_event event_name do |event|
             process_message(event_name, event)
           end
@@ -51,7 +51,7 @@ module ReportPortal
       def finish_message_processing
         return if use_same_thread_for_reporting?
 
-        sleep 0.03 while !@queue.empty? || @queue.num_waiting == 0 # TODO: how to interrupt launch if the user aborted execution
+        sleep 0.03 while !@queue.empty? || @queue.num_waiting.zero? # TODO: how to interrupt launch if the user aborted execution
         @thread.kill
       end
 
