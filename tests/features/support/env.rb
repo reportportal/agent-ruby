@@ -1,15 +1,21 @@
+require 'base64'
 require 'cucumber'
 require 'pathname'
 
-$odd_even = 0
-$odd_even_started = false
+file_path = Pathname(__dir__).parent.parent + 'assets' + 'crane.png'
 
-After do |scenario|
-  $odd_even += 1 if $odd_even_started
-  if scenario.failed?
-    image = Pathname(__FILE__).dirname.parent.parent + 'assets' + 'crane.png'
-    embed image, 'image/png', 'Failure screenshot'
-  end
+After('@file_via_path') do
+  embed file_path, 'image/png', 'Image'
+end
+
+After('@file_via_src') do
+  src = File.read(file_path, mode: 'rb')
+  embed src, 'image/png', 'Image'
+end
+
+After('@file_via_base64_src') do
+  base64_src = Base64.encode64(File.read(file_path, mode: 'rb'))
+  embed base64_src, 'image/png;base64', 'Image'
 end
 
 Before('@pass_before') do

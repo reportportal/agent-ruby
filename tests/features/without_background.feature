@@ -204,3 +204,15 @@ Feature: Scenarios without background
     | don't like    |
     | hate          |
     | despise       |
+
+  @file_via_path
+  Scenario: With a file passed using a path
+    Given Passing step #1
+
+  @file_via_src
+  Scenario: With a file passed using source
+    Given Passing step #1
+
+  @file_via_base64_src
+  Scenario: With a file passed using base64 source
+    Given Passing step #1
