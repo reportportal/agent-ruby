@@ -5,10 +5,8 @@ module ReportPortal
   class Settings
     include Singleton
 
-    PREFIX = 'rp_'.freeze
-
     def initialize
-      filename = ENV.fetch("#{PREFIX}config") do
+      filename = ENV.fetch('rp_config') do
         glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
         p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
         glob.first
@@ -32,7 +30,11 @@ module ReportPortal
 
       keys.each do |key, is_required|
         define_singleton_method(key.to_sym) { setting(key) }
-        raise "ReportPortal: Define environment variable '#{PREFIX}#{key}' or key #{key} in the configuration YAML file" if is_required && public_send(key).nil?
+        next unless is_required && public_send(key).nil?
+
+        env_variable_name = env_variable_name(key)
+        raise "ReportPortal: Define environment variable '#{env_variable_name.upcase}', '#{env_variable_name}' "\
+          "or key #{key} in the configuration YAML file"
       end
     end
 
@@ -47,8 +49,16 @@ module ReportPortal
     private
 
     def setting(key)
-      pkey = PREFIX + key
-      ENV.key?(pkey) ? YAML.safe_load(ENV[pkey]) : @properties[key]
+      env_variable_name = env_variable_name(key)
+      return YAML.safe_load(ENV[env_variable_name.upcase]) if ENV.key?(env_variable_name.upcase)
+
+      return YAML.safe_load(ENV[env_variable_name]) if ENV.key?(env_variable_name)
+
+      @properties[key]
+    end
+
+    def env_variable_name(key)
+      'rp_' + key
     end
   end
 end
