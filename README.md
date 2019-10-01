@@ -60,8 +60,9 @@ Request to https://rp.epam.com/reportportal-ws/api/v1/pass-team/launch//finish p
  - is_debug - set to true to mark the launch as 'DEBUG' (it will appear in Debug tab in Report Portal)
  - use_standard_logger - set to true to enable logging via standard Ruby Logger class to ReportPortal. Note that log messages are transformed to strings before sending.
 
-Each of these settings can be overridden by an environment variable with the same name and 'rp_' prefix (e.g. 'rp_uuid' for 'uuid'). Environment variables take precedence over YAML configuration.
-Environment variable values are parsed as YAML entities.
+Each of these settings can be overridden by an environment variable with the same name and 'rp_' prefix (e.g. 'rp_uuid' for 'uuid'). Environment variable can be upper cased (e.g. 'RP_UUID').
+Environment variables take precedence over YAML configuration.
+Environment variable values are parsed as YAML values.
 
 ## WebMock configuration
 If you use WebMock for stubbing and setting expectations on HTTP requests in Ruby,
