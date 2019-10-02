@@ -18,7 +18,7 @@ module ReportPortal
     attr_accessor :launch_id, :current_scenario
 
     def now
-      (Time.now.to_f * 1000).to_i
+      (current_time.to_f * 1000).to_i
     end
 
     def status_to_level(status)
@@ -157,6 +157,13 @@ module ReportPortal
 
     def http_client
       @http_client ||= HttpClient.new
+    end
+
+    def current_time
+      # `now_without_mock_time` is provided by Timecop and returns a real, not mocked time
+      return Time.now_without_mock_time if Time.respond_to?(:now_without_mock_time)
+
+      Time.now
     end
   end
 end
