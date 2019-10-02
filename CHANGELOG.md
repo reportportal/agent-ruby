@@ -7,3 +7,5 @@
 * Make `/api/v1` not required as part of endpoint in report_portal.yml
 * Add a mode to use persistent HTTP connection
 * Remove JSON slurper
+* Support environment variable names prefixed with `rp_` in `reportportal:start_launch` and `reportportal:finish_launch` for consistency with formatters
+* Support providing configuration values via upcased environment variables (e.g. `RP_UUID`)
