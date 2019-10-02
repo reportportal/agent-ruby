@@ -5,6 +5,7 @@ require 'securerandom'
 
 require_relative '../../reportportal'
 require_relative '../logging/logger'
+require_relative 'data_table_formatter'
 
 module ReportPortal
   module Cucumber
@@ -82,7 +83,7 @@ module ReportPortal
           if step_source.multiline_arg.doc_string?
             message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
           elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
+            message << "\n#{DataTableFormatter.format_table(step_source.multiline_arg)}"
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
