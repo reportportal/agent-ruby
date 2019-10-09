@@ -9,3 +9,4 @@
 * Remove JSON slurper
 * Support environment variable names prefixed with `rp_` in `reportportal:start_launch` and `reportportal:finish_launch` for consistency with formatters
 * Support providing configuration values via upcased environment variables (e.g. `RP_UUID`)
+* Report real, not mocked time when Timecop is used
