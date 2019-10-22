@@ -47,3 +47,14 @@ AfterStep do
     raise 'I failed!'
   end
 end
+
+AfterConfiguration do |config|
+  config.on_event :test_run_started do
+    ReportPortal.on_event :prepare_start_item_request do |rp_event|
+      rp_event.request_data[:parameters] = [{ key: 'param_name', value: 'param_value' }]
+    end
+    ReportPortal.on_event :prepare_start_item_request do |rp_event|
+      rp_event.request_data[:parameters] << { key: 'param_name2', value: 'param_value2' }
+    end
+  end
+end
