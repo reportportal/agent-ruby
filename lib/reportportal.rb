@@ -7,6 +7,7 @@ require 'pathname'
 require 'tempfile'
 require 'uri'
 
+require_relative 'report_portal/event_bus'
 require_relative 'report_portal/settings'
 require_relative 'report_portal/http_client'
 
@@ -50,6 +51,7 @@ module ReportPortal
       item = item_node.content
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: @launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
+      event_bus.broadcast(:prepare_start_item_request, request_data: data)
       send_request(:post, path, json: data)['id']
     end
 
@@ -137,6 +139,11 @@ module ReportPortal
       end
     end
 
+    # Registers an event. The proc will be called back with the event object.
+    def on_event(name, &proc)
+      event_bus.on(name, &proc)
+    end
+
     private
 
     def send_file_from_path(status, path, label, time)
@@ -164,6 +171,10 @@ module ReportPortal
       return Time.now_without_mock_time if Time.respond_to?(:now_without_mock_time)
 
       Time.now
+    end
+
+    def event_bus
+      @event_bus ||= EventBus.new
     end
   end
 end
