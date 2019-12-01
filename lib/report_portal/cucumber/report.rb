@@ -56,7 +56,7 @@ module ReportPortal
         tags = test_case.tags.map(&:name)
         type = :STEP
 
-        ReportPortal.current_scenario = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
+        ReportPortal.current_scenario = ReportPortal::TestItem.new(name: name, type: type, id: nil, start_time: time_to_send(desired_time), description: description, closed: false, tags: tags)
         scenario_node = Tree::TreeNode.new(SecureRandom.hex, ReportPortal.current_scenario)
         @parent_item_node << scenario_node
         ReportPortal.current_scenario.id = ReportPortal.start_item(scenario_node)
@@ -177,11 +177,11 @@ module ReportPortal
                index < path_components.size - 1 && # is folder?
                (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
-              item = ReportPortal::TestItem.new(name, type, id_of_created_item, time_to_send(desired_time), description, false, tags)
+              item = ReportPortal::TestItem.new(name: name, type: type, id: id_of_created_item, start_time: time_to_send(desired_time), description: description, closed: false, tags: tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
             else
-              item = ReportPortal::TestItem.new(name, type, nil, time_to_send(desired_time), description, false, tags)
+              item = ReportPortal::TestItem.new(name: name, type: type, id: nil, start_time: time_to_send(desired_time), description: description, closed: false, tags: tags)
               child_node = Tree::TreeNode.new(path_component, item)
               parent_node << child_node
               item.id = ReportPortal.start_item(child_node) # TODO: multithreading

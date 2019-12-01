@@ -8,11 +8,12 @@ require 'tempfile'
 require 'uri'
 
 require_relative 'report_portal/event_bus'
+require_relative 'report_portal/models/item_search_options'
+require_relative 'report_portal/models/test_item'
 require_relative 'report_portal/settings'
 require_relative 'report_portal/http_client'
 
 module ReportPortal
-  TestItem = Struct.new(:name, :type, :id, :start_time, :description, :closed, :tags)
   LOG_LEVELS = { error: 'ERROR', warn: 'WARN', info: 'INFO', debug: 'DEBUG', trace: 'TRACE', fatal: 'FATAL', unknown: 'UNKNOWN' }.freeze
 
   class << self
@@ -97,6 +98,29 @@ module ReportPortal
       end
     end
 
+    # @option options [Hash] options, see ReportPortal::ItemSearchOptions
+    def get_items(filter_options = {})
+      page_size = 100
+      max_pages = 100
+      all_items = []
+      1.step.each do |page_number|
+        raise 'Too many pages with the results were returned' if page_number > max_pages
+
+        options = ItemSearchOptions.new({ page_size: page_size, page_number: page_number }.merge(filter_options))
+        page_items = send_request(:get, 'item', params: options.query_params)['content'].map do |item_params|
+          TestItem.new(item_params)
+        end
+        all_items += page_items
+        break if page_items.size < page_size
+      end
+      all_items
+    end
+
+    # @param item_ids [Array<String>] an array of items to remove (represented by ids)
+    def delete_items(item_ids)
+      send_request(:delete, 'item', params: { ids: item_ids })
+    end
+
     # needed for parallel formatter
     def item_id_of(name, parent_node)
       path = if parent_node.is_root? # folder without parent folder
@@ -134,8 +158,7 @@ module ReportPortal
 
       ids.each do |id|
         close_child_items(id)
-        # temporary, we actually only need the id
-        finish_item(TestItem.new(nil, nil, id, nil, nil, nil, nil))
+        finish_item(TestItem.new(id: id))
       end
     end
 

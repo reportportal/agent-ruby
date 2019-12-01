@@ -58,3 +58,15 @@ AfterConfiguration do |config|
     end
   end
 end
+
+at_exit do
+  items = ReportPortal.get_items(launch_id: ReportPortal.launch_id, name: 'Scenario Outline: Conditionally passing outline, Examples (#1)')
+  raise "Incorrect items: #{items}" if items.size != 1
+  raise "Incorrect items: #{items}" if items[0].description != 'tests/features/without_background.feature:108'
+
+  ReportPortal.delete_items(items.map(&:id))
+  items = ReportPortal.get_items(launch_id: ReportPortal.launch_id, name: 'Scenario Outline: Conditionally passing outline, Examples (#1)')
+  raise 'Item is not deleted' unless items.empty?
+
+  puts 'at_exit hook completed successfully'
+end
