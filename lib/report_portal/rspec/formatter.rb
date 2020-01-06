@@ -105,7 +105,7 @@ module ReportPortal
         ReportPortal.current_scenario = ReportPortal::TestItem.new(description[0..MAX_DESCRIPTION_LENGTH-1],
                                                                    :STEP,
                                                                    nil,
-                                                                   ReportPortal.now,
+                                                                   format_start_time(notification),
                                                                    '',
                                                                    false,
                                                                    [],
@@ -134,8 +134,8 @@ module ReportPortal
         ReportPortal.current_scenario = nil
       end
 
-      def example_pending(_notification, )
-        ReportPortal.finish_item(ReportPortal.current_scenario, :skipped, nil, nil, _notification.example.execution_result.pending_message) unless ReportPortal.current_scenario.nil?
+      def example_pending(_notification)
+        ReportPortal.finish_item(ReportPortal.current_scenario, :skipped) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
 
