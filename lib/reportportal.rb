@@ -21,6 +21,7 @@ require 'rest_client'
 require 'uri'
 require 'pathname'
 require 'tempfile'
+require 'time'
 
 require_relative 'report_portal/settings'
 require_relative 'report_portal/patches/rest_client'
@@ -101,7 +102,7 @@ module ReportPortal
       data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
       do_request(url) do |resource|
-        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']      
+        JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
       end
     end
 
@@ -123,7 +124,26 @@ module ReportPortal
       end
     end
 
-    # TODO: implement force finish
+    def find_launch(browser, branch, build_number)
+      url = "#{Settings.instance.project_url}/launch?filter.eq.number=#{build_number}&filter.eq.name=#{branch}%20-%20#{browser}"
+      do_request(url) do |resource|
+        data = JSON.parse(resource.get)['content'][0]['id']
+      end
+    end
+
+    def force_finish(launch_id)
+      url = "#{Settings.instance.project_url}/launch/#{launch_id}/stop"
+      force_finish_body =
+        {
+          'description': 'string',
+          'end_time': Time.now.utc.iso8601(3),
+          'status': 'STOPPED',
+          'tags': ['string']
+        }
+      do_request(url) do |resource|
+        resource.put data.to_json, content_type: :json, &@response_handler
+      end
+    end
 
     def send_log(status, message, time)
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
