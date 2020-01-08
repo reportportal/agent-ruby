@@ -1,18 +1,18 @@
 # Copyright 2015 EPAM Systems
-# 
-# 
+#
+#
 # This file is part of Report Portal.
-# 
+#
 # Report Portal is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # ReportPortal is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public License
 # along with Report Portal.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -124,26 +124,7 @@ module ReportPortal
       end
     end
 
-    def find_launch(browser, branch, build_number)
-      url = "#{Settings.instance.project_url}/launch?filter.eq.number=#{build_number}&filter.eq.name=#{branch}%20-%20#{browser}"
-      do_request(url) do |resource|
-        data = JSON.parse(resource.get)['content'][0]['id']
-      end
-    end
-
-    def force_finish(launch_id)
-      url = "#{Settings.instance.project_url}/launch/#{launch_id}/stop"
-      force_finish_body =
-        {
-          'description': 'string',
-          'end_time': Time.now.utc.iso8601(3),
-          'status': 'STOPPED',
-          'tags': ['string']
-        }
-      do_request(url) do |resource|
-        resource.put data.to_json, content_type: :json, &@response_handler
-      end
-    end
+    # TODO: implement force finish
 
     def send_log(status, message, time)
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
