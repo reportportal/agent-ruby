@@ -21,7 +21,6 @@ require 'rest_client'
 require 'uri'
 require 'pathname'
 require 'tempfile'
-require 'time'
 
 require_relative 'report_portal/settings'
 require_relative 'report_portal/patches/rest_client'
