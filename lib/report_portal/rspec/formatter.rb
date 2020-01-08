@@ -44,8 +44,8 @@ module ReportPortal
         return unless should_report?(notification)  # Report to RP only if no failures OR if rerun
         example_group_started(notification.examples.first.example_group, notification.examples.first)
         notification.examples.each do |example|
-        end_time = example.execution_result.finished_at
           example_started(example)
+          end_time = example.execution_result.finished_at
           case example.execution_result.status
           when :passed
             example_passed(example, end_time)
