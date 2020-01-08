@@ -135,7 +135,7 @@ module ReportPortal
       end
 
       def example_pending(_notification, end_time = nil)
-        ReportPortal.finish_item(ReportPortal.current_scenario, :skipped, end_time) unless ReportPortal.current_scenario.nil?
+        ReportPortal.finish_item(ReportPortal.current_scenario, :skipped, end_time, nil, _notification.execution_result.pending_message) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
 

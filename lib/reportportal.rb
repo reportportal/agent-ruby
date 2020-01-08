@@ -105,7 +105,7 @@ module ReportPortal
       end
     end
 
-    def finish_item(item, status = nil, end_time = nil, force_issue = nil)
+    def finish_item(item, status = nil, end_time = nil, force_issue = nil, pending_message = nil)
       unless item.nil? || item.id.nil? || item.closed
         url = "#{Settings.instance.project_url}/item/#{item.id}"
         data = { end_time: end_time.nil? ? now : end_time }
@@ -114,6 +114,7 @@ module ReportPortal
         if force_issue && status != :passed # TODO: check for :passed status is probably not needed
           data[:issue] = { issue_type: 'AUTOMATION_BUG', comment: force_issue.to_s }
         elsif status == :skipped
+          data[:tags] = [pending_message] if pending_message
           data[:issue] = { issue_type: 'NOT_ISSUE' }
         end
         do_request(url) do |resource|
