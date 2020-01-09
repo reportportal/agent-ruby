@@ -119,18 +119,18 @@ module ReportPortal
         end
       end
 
-      def example_passed(_notification)
-        ReportPortal.finish_item(ReportPortal.current_scenario, :passed) unless ReportPortal.current_scenario.nil?
+      def example_passed(_notification, end_time = nil)
+        ReportPortal.finish_item(ReportPortal.current_scenario, :passed, end_time) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
 
-      def example_failed(notification)
+      def example_failed(notification, end_time = nil)
         puts "^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         upload_screenshots(notification)
         puts "^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
         log_content = read_log_file_content(notification)
         ReportPortal.send_log(:failed, log_content, ReportPortal.now)
-        ReportPortal.finish_item(ReportPortal.current_scenario, :failed) unless ReportPortal.current_scenario.nil?
+        ReportPortal.finish_item(ReportPortal.current_scenario, :failed, end_time) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
 
