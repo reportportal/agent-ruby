@@ -48,11 +48,11 @@ module ReportPortal
           end_time = example.execution_result.finished_at
           case example.execution_result.status
           when :passed
-            example_passed(example)
+            example_passed(example, end_time)
           when :failed
-            example_failed(example)
+            example_failed(example, end_time)
           when :pending
-            example_pending(example)
+            example_pending(example, end_time)
           end
         end
         example_group_finished(notification.examples.first.example_group)
