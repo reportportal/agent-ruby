@@ -77,7 +77,7 @@ module ReportPortal
 
     def start_launch(description, start_time = now)
       url = "#{Settings.instance.project_url}/launch"
-      data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
+      data = { name: Settings.instance.launch, start_time: format_time(start_time), tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
       do_request(url) do |resource|
         res = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
         ENV[LAUNCH_ID] = res[JSON_ID]
