@@ -49,7 +49,7 @@ module ReportPortal
     attr_accessor :current_scenario
 
     def now
-      (Time.now.to_f * 1000).to_i
+      Time.now
     end
 
     def status_to_level(status)
@@ -87,7 +87,7 @@ module ReportPortal
 
     def finish_launch(end_time = now)
       url = "#{Settings.instance.project_url}/launch/#{launch_id}/finish"
-      data = { end_time: end_time }
+      data = { end_time: format_time(end_time) }
       do_request(url) do |resource|
         resource.put data.to_json, content_type: :json, &@response_handler
       end
@@ -107,8 +107,9 @@ module ReportPortal
 
     def finish_item(item, status = nil, end_time = nil, force_issue = nil, pending_message = nil)
       unless item.nil? || item.id.nil? || item.closed
+        p "[RP] Finish Item  ==>  (id: #{item.id}"
         url = "#{Settings.instance.project_url}/item/#{item.id}"
-        data = { end_time: end_time.nil? ? now : end_time }
+        data = { end_time: format_time(end_time.nil? ? now : end_time) }
         data[:status] = status unless status.nil?
         p "[RP] Finish Item  ==>  (id: #{item.id}"
         if force_issue && status != :passed # TODO: check for :passed status is probably not needed
@@ -222,6 +223,11 @@ module ReportPortal
     end
 
     private
+
+    def format_time(time)
+      time = Time.parse(time) if time.is_a?(String)
+      time.strftime("%Y-%m-%dT%H:%M:%S.%L%z")
+    end
 
     def create_resource(url)
       props = { :headers => {:Authorization => "Bearer #{Settings.instance.uuid}"}}
