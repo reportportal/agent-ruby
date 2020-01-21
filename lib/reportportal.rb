@@ -225,7 +225,7 @@ module ReportPortal
     private
 
     def format_time(time)
-      time = Time.parse(time_string) if time.is_a?(String)
+      time = Time.parse(time) if time.is_a?(String)
       time.strftime("%Y-%m-%dT%H:%M:%S.%L%z")
     end
 
