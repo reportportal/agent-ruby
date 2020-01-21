@@ -187,7 +187,7 @@ module ReportPortal
       end
 
       def format_start_time(example)
-        (example.execution_result.started_at.to_f * 1000).to_i
+        example.execution_result.started_at
       end
 
       def should_report?(notification)

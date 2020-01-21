@@ -77,7 +77,7 @@ module ReportPortal
 
     def start_launch(description, start_time = now)
       url = "#{Settings.instance.project_url}/launch"
-      data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
+      data = { name: Settings.instance.launch, start_time: format_time(start_time), tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
       do_request(url) do |resource|
         res = JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))
         ENV[LAUNCH_ID] = res[JSON_ID]
@@ -98,7 +98,7 @@ module ReportPortal
       url += "/#{item_node.parent.content.id}" unless item_node.parent && item_node.parent.is_root?
       p "[RP] Start Item  ==>  #{item_node.content}"
       item = item_node.content
-      data = { start_time: item.start_time, name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
+      data = { start_time: format_time(item.start_time), name: item.name[0, 255], type: item.type.to_s, launch_id: launch_id, description: item.description }
       data[:tags] = item.tags unless item.tags.empty?
       do_request(url) do |resource|
         JSON.parse(resource.post(data.to_json, content_type: :json, &@response_handler))['id']
@@ -149,7 +149,7 @@ module ReportPortal
     def send_log(status, message, time)
       unless @current_scenario.nil? || @current_scenario.closed # it can be nil if scenario outline in expand mode is executed
         url = "#{Settings.instance.project_url}/log"
-        data = { item_id: @current_scenario.id, time: time, level: status_to_level(status), message: message.to_s }
+        data = { item_id: @current_scenario.id, time: format_time(time), level: status_to_level(status), message: message.to_s }
         do_request(url) do |resource|
           resource.post(data.to_json, content_type: :json, &@response_handler)
         end
@@ -168,7 +168,7 @@ module ReportPortal
       end
       File.open(File.realpath(path), 'rb') do |file|
         label ||= File.basename(file)
-        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: time, file: { name: File.basename(file) } }
+        json = { level: status_to_level(status), message: label, item_id: @current_scenario.id, time: format_time(time), file: { name: File.basename(file) } }
         data = { :json_request_part => [json].to_json, label => file, :multipart => true, :content_type => 'application/json' }
         do_request(url) do |resource|
           resource.post(data, { content_type: 'multipart/form-data' }, &@response_handler)
