@@ -49,7 +49,7 @@ Supported settings:
  - launch - launch name
  - description - custom launch description
  - project - project name
- - tags - array of tags for the launch
+ - attributes - launch attributes. key value object
  - formatter_modes - array of modes that modify formatter behavior, see [formatter modes](#formatter_modes)
  - launch_id - id of previously created launch (to be used if formatter_modes contains attach_to_launch)
  - file_with_launch_id - path to file with id of launch (to be used if formatter_modes contains attach_to_launch)
