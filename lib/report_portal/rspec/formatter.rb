@@ -126,17 +126,22 @@ module ReportPortal
       end
 
       def example_failed(notification, end_time = nil)
-        puts "^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
+        puts '^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
         upload_screenshots(notification)
-        puts "^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^"
+        puts '^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
         log_content = read_log_file_content(notification)
         ReportPortal.send_log(:failed, log_content, ReportPortal.now)
-        ReportPortal.finish_item(ReportPortal.current_scenario, :failed, end_time) unless ReportPortal.current_scenario.nil?
+        unless ReportPortal.current_scenario.nil?
+          ReportPortal.finish_item(ReportPortal.current_scenario, :failed, end_time)
+        end
         ReportPortal.current_scenario = nil
       end
 
-      def example_pending(_notification, end_time = nil)
-        ReportPortal.finish_item(ReportPortal.current_scenario, :skipped, end_time, nil, _notification.execution_result.pending_message) unless ReportPortal.current_scenario.nil?
+      def example_pending(notification, end_time = nil)
+        unless ReportPortal.current_scenario.nil?
+          pending_msg = notification.execution_result.pending_message
+          ReportPortal.finish_item(ReportPortal.current_scenario, :skipped, end_time, nil, pending_msg)
+        end
         ReportPortal.current_scenario = nil
       end
 
@@ -160,21 +165,25 @@ module ReportPortal
         if example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
-          run_log = "./log/#{file_name}.log"
-          rerun_log = "./log/#{file_name}_rerun.log"
-          log_content = if File.exists?(run_log)
-                          IO.read(run_log)
-                        elsif File.exists?(rerun_log)
-                          IO.read(rerun_log)
-                        else
-                          puts "No log files found!!!\nExpected one of these:\n1: #{run_log}\n2: #{rerun_log}"
-                        end
+          log_content = read_log_content(file_name)
           "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
         else
           "example file name did not match [#{example.file_name}]\n\n#{base_log}"
         end
-      rescue => error
-        puts "read_log_file_content failed\n Error: #{error}"
+      rescue => e
+        puts "read_log_file_content failed\n Error: #{e}"
+      end
+
+      def read_log_content(file_name)
+        run_log = "./log/#{file_name}.log"
+        rerun_log = "./log/#{file_name}_rerun.log"
+        if File.exist?(run_log)
+          IO.read(run_log)
+        elsif File.exist?(rerun_log)
+          IO.read(rerun_log)
+        else
+          puts "No log files found!!!\nExpected one of these:\n1: #{run_log}\n2: #{rerun_log}"
+        end
       end
 
       def upload_screenshots(notification)
@@ -192,11 +201,17 @@ module ReportPortal
       end
 
       def should_report?(notification)
-        failed = notification.examples.select { |example| example.execution_result.status == :failed }.count
-        is_rerun = !ENV['RERUN'].nil?
-        should_report = failed == 0 || is_rerun
-        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun.to_s}"
+        failed = read_failures_count(notification)
+        file_name = notification.examples.first.file_path
+        viz_test = !file_name.match(/visualization|viz/).nil?
+        is_rerun = !ENV['RERUN'].nil? || viz_test
+        should_report = failed.zero? || is_rerun
+        puts "[RP] Should Report? ==> #{should_report} | Failed = #{failed} | RERUN = #{is_rerun}"
         should_report
+      end
+
+      def read_failures_count(notification)
+        notification.examples.select { |example| example.execution_result.status == :failed }.count
       end
     end
   end
