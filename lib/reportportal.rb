@@ -175,7 +175,7 @@ module ReportPortal
         json = [{ level: status_to_level(status), message: label || filename, item_id: @current_scenario.id, time: time, file: { name: filename } }]
         form = {
           json_request_part: HTTP::FormData::Part.new(JSON.dump(json), content_type: 'application/json'),
-          binary_part: HTTP::FormData::File.new(file, filename: filename, content_type: "#{MIME::Types[mime_type].first}")
+          binary_part: HTTP::FormData::File.new(file, filename: filename, content_type: MIME::Types[mime_type].first.to_s)
         }
         send_request(:post, 'log', form: form)
       end
