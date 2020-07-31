@@ -82,7 +82,7 @@ module ReportPortal
     def send_file(status, path_or_src, label = nil, time = now, mime_type = 'image/png')
       str_without_nils = path_or_src.to_s.gsub("\0", '') # file? does not allow NULLs inside the string
       if File.file?(str_without_nils)
-        send_file_from_path(status, path_or_src, label, time)
+        send_file_from_path(status, path_or_src, label, time, mime_type)
       else
         if mime_type =~ /;base64$/
           mime_type = mime_type[0..-8]
@@ -93,7 +93,7 @@ module ReportPortal
           tempfile.binmode
           tempfile.write(path_or_src)
           tempfile.rewind
-          send_file_from_path(status, tempfile.path, label, time)
+          send_file_from_path(status, tempfile.path, label, time, mime_type)
         end
       end
     end
@@ -169,13 +169,13 @@ module ReportPortal
 
     private
 
-    def send_file_from_path(status, path, label, time)
+    def send_file_from_path(status, path, label, time, mime_type)
       File.open(File.realpath(path), 'rb') do |file|
         filename = File.basename(file)
         json = [{ level: status_to_level(status), message: label || filename, item_id: @current_scenario.id, time: time, file: { name: filename } }]
         form = {
           json_request_part: HTTP::FormData::Part.new(JSON.dump(json), content_type: 'application/json'),
-          binary_part: HTTP::FormData::File.new(file, filename: filename)
+          binary_part: HTTP::FormData::File.new(file, filename: filename, content_type: MIME::Types[mime_type].first.to_s)
         }
         send_request(:post, 'log', form: form)
       end
