@@ -2,7 +2,11 @@ uuid: 12345678-1234-1234-1234-123456789012
 endpoint: https://localhost:8080
 launch: example_launch_name
 project: default_personal
-tags: [tag1, tag2, tag3]
+attributes:
+  - key: build
+    value: '0.1'
+  - value: test
+#tags: [tag1, tag2, tag3] - DEPRECATED. Use attributes instead
 #formatter_modes: [skip_reporting_hierarchy]
 #is_debug: true
 #disable_ssl_verification: true

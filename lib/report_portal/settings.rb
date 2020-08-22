@@ -18,8 +18,9 @@ module ReportPortal
         'endpoint' => true,
         'project' => true,
         'launch' => true,
-        'description' => false,
         'tags' => false,
+        'description' => false,
+        'attributes' => false,
         'is_debug' => false,
         'disable_ssl_verification' => false,
         # for parallel execution only

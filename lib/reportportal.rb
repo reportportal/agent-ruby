@@ -37,7 +37,9 @@ module ReportPortal
     end
 
     def start_launch(description, start_time = now)
-      data = { name: Settings.instance.launch, start_time: start_time, tags: Settings.instance.tags, description: description, mode: Settings.instance.launch_mode }
+      required_data = { name: Settings.instance.launch, start_time: start_time, description:
+          description, mode: Settings.instance.launch_mode }
+      data = prepare_options(required_data, Settings.instance)
       @launch_id = send_request(:post, 'launch', json: data)['id']
     end
 
@@ -198,6 +200,14 @@ module ReportPortal
 
     def event_bus
       @event_bus ||= EventBus.new
+    end
+
+    def prepare_options(data, config = {})
+      if config.attributes
+        data[:attributes] = config.attributes
+      elsif (data[:tags] = config.tags)
+      end
+      data
     end
   end
 end
