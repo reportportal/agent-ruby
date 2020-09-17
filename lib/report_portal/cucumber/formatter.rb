@@ -39,6 +39,12 @@ module ReportPortal
         process_message(:embed, *args)
       end
 
+      # embed is deprecated from cucumber4, should use attach
+      # instead
+      def attach(*args)
+        process_message(:attach, *args)
+      end
+
       private
 
       def report

@@ -129,6 +129,17 @@ module ReportPortal
         ReportPortal.send_file(:info, path_or_src, label, time_to_send(desired_time), mime_type)
       end
 
+      def attach(path_or_src, mime_type, desired_time = ReportPortal.now)
+        # Cucumber > 4 has deprecated the use of puts, and instead wants
+        # the use of "log". This in turn calls attach on all formatters
+        # with mime-type 'text/x.cucumber.log+plain'
+        if mime_type == 'text/x.cucumber.log+plain'
+            ReportPortal.send_log(:info, path_or_src, time_to_send(desired_time))
+        else
+            ReportPortal.send_file(:info, path_or_src, nil, time_to_send(desired_time), mime_type)
+        end
+      end
+
       private
 
       # Report Portal sorts logs by time. However, several logs might have the same time.
