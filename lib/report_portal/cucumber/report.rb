@@ -173,9 +173,9 @@ module ReportPortal
               type = :TEST
             end
             # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-            if parallel? &&
+            if (parallel? || attach_to_launch?) &&
                index < path_components.size - 1 && # is folder?
-               (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+               (id_of_created_item = ReportPortal.uuid_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
               item = ReportPortal::TestItem.new(name: name, type: type, id: id_of_created_item, start_time: time_to_send(desired_time), description: description, closed: false, tags: tags)
               child_node = Tree::TreeNode.new(path_component, item)

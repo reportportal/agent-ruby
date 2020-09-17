@@ -126,7 +126,7 @@ module ReportPortal
     # needed for parallel formatter
     def item_id_of(name, parent_node)
       path = if parent_node.is_root? # folder without parent folder
-               "item?filter.eq.launch=#{@launch_id}&filter.eq.name=#{CGI.escape(name)}&filter.size.path=0"
+               "item?filter.eq.launchId=#{launch_id_to_number}&filter.eq.name=#{CGI.escape(name)}"
              else
                "item?filter.eq.parent=#{parent_node.content.id}&filter.eq.name=#{CGI.escape(name)}"
              end
@@ -137,11 +137,29 @@ module ReportPortal
     end
 
     # needed for parallel formatter
+    def uuid_of(name, parent_node)
+      itemid = item_id_of(name,parent_node)
+      return nil if itemid.nil?
+
+      path = "item/#{itemid}"
+      data = send_request(:get, path)
+
+      (data.key? 'uuid') ? data['uuid'] : nil
+    end
+
+    # needed for parallel formatter
+    def launch_id_to_number()
+        path = "launch/#{@launch_id}"
+        data = send_request(:get, path)
+        data['id']
+    end
+
+    # needed for parallel formatter
     def close_child_items(parent_id)
       path = if parent_id.nil?
-               "item?filter.eq.launch=#{@launch_id}&filter.size.path=0&page.page=1&page.size=100"
+               "item?filter.eq.launchId=#{launch_id_to_number}"
              else
-               "item?filter.eq.parent=#{parent_id}&page.page=1&page.size=100"
+               "item?filter.eq.launchId=#{launch_id_to_number}&filter.eq.parentId=#{parent_id}&page.page=1&page.size=100"
              end
       ids = []
       loop do
@@ -153,14 +171,22 @@ module ReportPortal
           url = nil
         end
         data['content'].each do |i|
-          ids << i['id'] if i['has_childs'] && i['status'] == 'IN_PROGRESS'
+          ids << i['id'] if i['hasChildren'] && i['status'] == 'IN_PROGRESS'
         end
         break if url.nil?
       end
 
+      # There's a mix of numerical ID and string UUID going on here in the API
+      # When querying child items here, we need to use the numerical id, but when
+      # we call finish_item, the API it calls wants the UUID. Simplify by creating
+      # a map.
+      ids = ids.map { |id|
+                {id: id, uuid: send_request(:get, "item/#{id}")['uuid']}
+            }
+
       ids.each do |id|
-        close_child_items(id)
-        finish_item(TestItem.new(id: id))
+        close_child_items(id[:id])
+        finish_item(TestItem.new(id: id[:uuid]))
       end
     end
 
