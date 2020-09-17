@@ -63,9 +63,9 @@ module ReportPortal
         data = { end_time: end_time.nil? ? now : end_time }
         data[:status] = status unless status.nil?
         if force_issue && status != :passed # TODO: check for :passed status is probably not needed
-          data[:issue] = { issue_type: 'AUTOMATION_BUG', comment: force_issue.to_s }
+          data[:issue] = { issue_type: 'ab001', comment: force_issue.to_s }
         elsif status == :skipped
-          data[:issue] = { issue_type: 'NOT_ISSUE' }
+          data[:issue] = { issue_type: 'nb001' }
         end
         send_request(:put, "item/#{item.id}", json: data)
         item.closed = true
