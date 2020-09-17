@@ -38,7 +38,7 @@ module ReportPortal
     def add_insecure_ssl_options
       ssl_context = OpenSSL::SSL::SSLContext.new
       ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      @http.default_options = { ssl_context: ssl_context }
+      @http.default_options = @http.default_options.with_ssl_context(ssl_context)
     end
 
     # Response should be consumed before sending next request via the same persistent connection.
