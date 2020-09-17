@@ -138,20 +138,20 @@ module ReportPortal
 
     # needed for parallel formatter
     def uuid_of(name, parent_node)
-      itemid = item_id_of(name,parent_node)
+      itemid = item_id_of(name, parent_node)
       return nil if itemid.nil?
 
       path = "item/#{itemid}"
       data = send_request(:get, path)
 
-      (data.key? 'uuid') ? data['uuid'] : nil
+      data.key?('uuid') ? data['uuid'] : nil
     end
 
     # needed for parallel formatter
-    def launch_id_to_number()
-        path = "launch/#{@launch_id}"
-        data = send_request(:get, path)
-        data['id']
+    def launch_id_to_number
+      path = "launch/#{@launch_id}"
+      data = send_request(:get, path)
+      data['id']
     end
 
     # needed for parallel formatter
@@ -180,9 +180,9 @@ module ReportPortal
       # When querying child items here, we need to use the numerical id, but when
       # we call finish_item, the API it calls wants the UUID. Simplify by creating
       # a map.
-      ids = ids.map { |id|
-                {id: id, uuid: send_request(:get, "item/#{id}")['uuid']}
-            }
+      ids = ids.map do |id|
+        { id: id, uuid: send_request(:get, "item/#{id}")['uuid'] }
+      end
 
       ids.each do |id|
         close_child_items(id[:id])

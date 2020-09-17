@@ -15,10 +15,10 @@ module ReportPortal
         setup_message_processing
 
         case config.out_stream
-            when IO
-                @io = config.out_stream
-            when String
-                @io = File.open(config.out_stream, "w")
+        when IO
+          @io = config.out_stream
+        when String
+          @io = File.open(config.out_stream, 'w')
         end
 
         %i[test_case_started test_case_finished test_step_started test_step_finished test_run_finished].each do |event_name|
@@ -31,8 +31,8 @@ module ReportPortal
 
       def puts(message)
         process_message(:puts, message)
-        @io.puts(message) unless @io.nil?
-        @io.flush unless @io.nil?
+        @io&.puts(message)
+        @io&.flush
       end
 
       def embed(*args)

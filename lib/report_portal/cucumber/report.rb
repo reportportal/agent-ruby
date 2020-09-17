@@ -79,7 +79,7 @@ module ReportPortal
         if @extractor.step?(test_step) # `after_test_step` is also invoked for hooks
           step_source = @extractor.step_source(test_step)
           message = "-- #{step_source.keyword}#{step_source.text} --"
-          multiline_arg=@extractor.step_multiline_arg(test_step)
+          multiline_arg = @extractor.step_multiline_arg(test_step)
           if multiline_arg.doc_string?
             message << %(\n"""\n#{multiline_arg.content}\n""")
           elsif multiline_arg.data_table?
@@ -134,9 +134,9 @@ module ReportPortal
         # the use of "log". This in turn calls attach on all formatters
         # with mime-type 'text/x.cucumber.log+plain'
         if mime_type == 'text/x.cucumber.log+plain'
-            ReportPortal.send_log(:info, path_or_src, time_to_send(desired_time))
+          ReportPortal.send_log(:info, path_or_src, time_to_send(desired_time))
         else
-            ReportPortal.send_file(:info, path_or_src, nil, time_to_send(desired_time), mime_type)
+          ReportPortal.send_file(:info, path_or_src, nil, time_to_send(desired_time), mime_type)
         end
       end
 
