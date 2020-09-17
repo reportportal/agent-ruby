@@ -1,4 +1,5 @@
 require_relative 'report'
+require_relative 'extractor'
 
 module ReportPortal
   module Cucumber
@@ -6,6 +7,10 @@ module ReportPortal
       # @api private
       def initialize(config)
         ENV['REPORT_PORTAL_USED'] = 'true'
+        @config = config
+        # Helper class used to abstract away the internal
+        # differences of cucumber 3 / 4+
+        @extractor = Extractor.create(config)
 
         setup_message_processing
 
@@ -37,7 +42,7 @@ module ReportPortal
       private
 
       def report
-        @report ||= ReportPortal::Cucumber::Report.new
+        @report ||= ReportPortal::Cucumber::Report.new(@extractor)
       end
 
       def setup_message_processing
