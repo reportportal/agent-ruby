@@ -188,10 +188,10 @@ module ReportPortal
 
       def upload_screenshots(notification)
         notification.metadata[:screenshot].each do |img|
-          file_name = "./log/#{img}.jpg"
-          new_file_name = "./log/#{SecureRandom.uuid}.jpg"
+          file_name = "./log/#{img}.png"
+          new_file_name = "./log/#{SecureRandom.uuid}.png"
           FileUtils.cp(file_name, new_file_name)
-          ReportPortal.send_file(:failed, new_file_name, img, ReportPortal.now, 'image/jpg')
+          ReportPortal.send_file(:failed, new_file_name, img, ReportPortal.now, 'image/png')
           File.delete(new_file_name)
         end
       end
