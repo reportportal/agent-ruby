@@ -63,8 +63,9 @@ module ReportPortal
         description = group_notification.description
         description = "#{description} (SUBSET = #{ENV['SUBSET']})" if ENV['SUBSET']
         description += " (SEQUENTAIL)" if ENV['SEQ']
-        description += " (LABS - #{ENV['LABS']})" if ENV['LABS']
         description += " (ACCOUNT = #{ENV['ACCOUNT_NAME']})" if ENV['ACCOUNT_NAME']
+        description += " (USER = #{ENV['USER_TYPE']})" if ENV['USER_TYPE']
+        description += " (LABS - #{ENV['LABS']})" if ENV['LABS']
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
