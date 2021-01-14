@@ -66,6 +66,7 @@ module ReportPortal
         description += " (ACCOUNT = #{ENV['ACCOUNT_NAME']})" if ENV['ACCOUNT_NAME']
         description += " (USER = #{ENV['USER_TYPE']})" if ENV['USER_TYPE']
         description += " (LABS - #{ENV['LABS']})" if ENV['LABS']
+        description += " (RERUN)" if ENV['RERUN']
         if description.size < MIN_DESCRIPTION_LENGTH
           p "Group description should be at least #{MIN_DESCRIPTION_LENGTH} characters ('group_notification': #{group_notification.inspect})"
           return
