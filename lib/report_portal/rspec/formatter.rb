@@ -168,7 +168,7 @@ module ReportPortal
 
       def read_log_file_content(example)
         exception = example.exception
-        base_log = "#{exception.class}: #{exception.message}\n\nBacktrace: #{exception.backtrace.join("\n")}"
+        base_log = exception ? "#{exception.class}: #{exception.message}\n\nBacktrace: #{exception.backtrace.join("\n")}" : ''
         if example.file_path.match('(\w+).rb')
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
