@@ -173,7 +173,10 @@ module ReportPortal
           file_name = $1
           file_name = "#{file_name}_#{ENV['SUBSET']}" unless ENV['SUBSET'].nil?
           log_content = read_log_content(file_name)
-          "#{base_log}\n\n* * *  Full Log  * * *\n\n#{log_content}"
+          output = "#{base_log}\n\n\n####### Full Log #######\n\n"
+          output += "######## Rerun Log #######\n\n#{log_content[:rerun_log]}\n\n" if log_content[:rerun_log]
+          output +="######## First Run Log #######\n\n#{log_content[:run_log]}\n\n" if log_content[:run_log]
+          output
         else
           "example file name did not match [#{example.file_name}]\n\n#{base_log}"
         end
@@ -184,16 +187,16 @@ module ReportPortal
       def read_log_content(file_name)
         run_log = "./log/#{file_name}.log"
         rerun_log = "./log/#{file_name}_rerun.log"
-        if File.exist?(run_log)
-          IO.read(run_log)
-        elsif File.exist?(rerun_log)
-          IO.read(rerun_log)
-        else
-          puts "No log files found!!!\nExpected one of these:\n1: #{run_log}\n2: #{rerun_log}"
-        end
+        logs = {}
+        logs[:run_log] = IO.read(run_log) if File.exist?(run_log)
+        logs[:rerun_log] = IO.read(rerun_log) if File.exist?(rerun_log)
+        puts "No log files found!!!\nExpected one of these:\n1: #{run_log}\n2: #{rerun_log}" if logs.size.eql?(0)
+        logs
       end
 
       def upload_screenshots(notification)
+        return unless notification.metadata[:screenshot]
+
         notification.metadata[:screenshot].each do |img|
           file_name = "./log/#{img}.png"
           new_file_name = "./log/#{SecureRandom.uuid}.png"
