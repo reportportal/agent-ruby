@@ -122,21 +122,26 @@ module ReportPortal
         end
       end
 
-      def example_passed(_notification, end_time = nil)
+      def example_passed(notification, end_time = nil)
+        upload_example_data(:passed, notification) if ENV['RERUN']
         ReportPortal.finish_item(ReportPortal.current_scenario, :passed, end_time) unless ReportPortal.current_scenario.nil?
         ReportPortal.current_scenario = nil
       end
 
       def example_failed(notification, end_time = nil)
-        puts '^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
-        upload_screenshots(notification)
-        puts '^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
-        log_content = read_log_file_content(notification)
-        ReportPortal.send_log(:failed, log_content, ReportPortal.now)
+        upload_example_data(:failed, notification)
         unless ReportPortal.current_scenario.nil?
           ReportPortal.finish_item(ReportPortal.current_scenario, :failed, end_time)
         end
         ReportPortal.current_scenario = nil
+      end
+
+      def upload_example_data(state, notification)
+        puts '^ ^ ^ ^ ^ ^  START SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
+        upload_screenshots(notification)
+        puts '^ ^ ^ ^ ^ ^  END SCREENSHOT UPLOAD!  ^ ^ ^ ^ ^ ^'
+        log_content = read_log_file_content(notification)
+        ReportPortal.send_log(state, log_content, ReportPortal.now)
       end
 
       def example_pending(notification, end_time = nil)
