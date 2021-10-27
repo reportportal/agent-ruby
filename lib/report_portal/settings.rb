@@ -40,7 +40,7 @@ module ReportPortal
         'launch' => true,
         'description' => false,
         'tags' => false,
-        'is_debug' => false,
+        'is_debug' => true,
         'disable_ssl_verification' => false,
         # for parallel execution only
         'use_standard_logger' => false,
