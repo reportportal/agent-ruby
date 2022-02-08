@@ -45,7 +45,11 @@ module ReportPortal
 
     def finish_launch(end_time = now)
       data = { end_time: end_time }
-      send_request(:put, "launch/#{@launch_id}/finish", json: data)
+      @finished_launch = send_request(:put, "launch/#{@launch_id}/finish", json: data)
+      @launch_link = @finished_launch['link']
+      if Settings.instance.logLaunchLink
+      	print "Launch ID ReportPortal: #{@launch_link}"
+      end
     end
 
     def start_item(item_node)

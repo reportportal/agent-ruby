@@ -26,7 +26,8 @@ module ReportPortal
         # for parallel execution only
         'use_standard_logger' => false,
         'launch_id' => false,
-        'file_with_launch_id' => false
+        'file_with_launch_id' => false,
+        'logLaunchLink' => false
       }
 
       keys.each do |key, is_required|
