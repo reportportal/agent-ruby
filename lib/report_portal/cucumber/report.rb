@@ -1,5 +1,4 @@
 require 'cucumber/formatter/io'
-require 'cucumber/formatter/hook_query_visitor'
 require 'tree'
 require 'securerandom'
 
@@ -18,7 +17,8 @@ module ReportPortal
         ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
       end
 
-      def initialize
+      def initialize(extractor)
+        @extractor = extractor
         @last_used_time = 0
         @root_node = Tree::TreeNode.new('')
         @parent_item_node = @root_node
@@ -45,13 +45,13 @@ module ReportPortal
       # TODO: time should be a required argument
       def test_case_started(event, desired_time = ReportPortal.now)
         test_case = event.test_case
-        feature = test_case.feature
-        if report_hierarchy? && !same_feature_as_previous_test_case?(feature)
+        feature = @extractor.feature(test_case)
+        if report_hierarchy? && !@extractor.same_feature_as_previous_test_case?(@parent_item_node.name, feature)
           end_feature(desired_time) unless @parent_item_node.is_root?
           start_feature_with_parentage(feature, desired_time)
         end
 
-        name = "#{test_case.keyword}: #{test_case.name}"
+        name = "#{@extractor.scenario_keyword(test_case)}: #{@extractor.scenario_name(test_case)}"
         description = test_case.location.to_s
         tags = test_case.tags.map(&:name)
         type = :STEP
@@ -76,13 +76,14 @@ module ReportPortal
 
       def test_step_started(event, desired_time = ReportPortal.now)
         test_step = event.test_step
-        if step?(test_step) # `after_test_step` is also invoked for hooks
-          step_source = test_step.source.last
+        if @extractor.step?(test_step) # `after_test_step` is also invoked for hooks
+          step_source = @extractor.step_source(test_step)
           message = "-- #{step_source.keyword}#{step_source.text} --"
-          if step_source.multiline_arg.doc_string?
-            message << %(\n"""\n#{step_source.multiline_arg.content}\n""")
-          elsif step_source.multiline_arg.data_table?
-            message << step_source.multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
+          multiline_arg = @extractor.step_multiline_arg(test_step)
+          if multiline_arg.doc_string?
+            message << %(\n"""\n#{multiline_arg.content}\n""")
+          elsif multiline_arg.data_table?
+            message << multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
           end
           ReportPortal.send_log(:trace, message, time_to_send(desired_time))
         end
@@ -98,20 +99,14 @@ module ReportPortal
                              ex = result.exception
                              format("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
                            else
-                             format("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
+                             format("Undefined step: %s:\n%s", test_step.text, @extractor.step_backtrace_line(test_step))
                            end
           ReportPortal.send_log(:error, exception_info, time_to_send(desired_time))
         end
 
         if status != :passed
           log_level = status == :skipped ? :warn : :error
-          step_type = if step?(test_step)
-                        'Step'
-                      else
-                        hook_class_name = test_step.source.last.class.name.split('::').last
-                        location = test_step.location
-                        "#{hook_class_name} at `#{location}`"
-                      end
+          step_type = @extractor.step_type(test_step)
           ReportPortal.send_log(log_level, "#{step_type} #{status}", time_to_send(desired_time))
         end
       end
@@ -134,6 +129,17 @@ module ReportPortal
         ReportPortal.send_file(:info, path_or_src, label, time_to_send(desired_time), mime_type)
       end
 
+      def attach(path_or_src, mime_type, desired_time = ReportPortal.now)
+        # Cucumber > 4 has deprecated the use of puts, and instead wants
+        # the use of "log". This in turn calls attach on all formatters
+        # with mime-type 'text/x.cucumber.log+plain'
+        if mime_type == 'text/x.cucumber.log+plain'
+          ReportPortal.send_log(:info, path_or_src, time_to_send(desired_time))
+        else
+          ReportPortal.send_file(:info, path_or_src, nil, time_to_send(desired_time), mime_type)
+        end
+      end
+
       private
 
       # Report Portal sorts logs by time. However, several logs might have the same time.
@@ -150,14 +156,10 @@ module ReportPortal
         @last_used_time = time_to_send
       end
 
-      def same_feature_as_previous_test_case?(feature)
-        @parent_item_node.name == feature.location.file.split(File::SEPARATOR).last
-      end
-
       def start_feature_with_parentage(feature, desired_time)
         parent_node = @root_node
         child_node = nil
-        path_components = feature.location.file.split(File::SEPARATOR)
+        path_components = @extractor.feature_location(feature).split(File::SEPARATOR)
         path_components.each_with_index do |path_component, index|
           child_node = parent_node[path_component]
           unless child_node # if child node was not created yet
@@ -167,15 +169,15 @@ module ReportPortal
               tags = []
               type = :SUITE
             else
-              name = "#{feature.keyword}: #{feature.name}"
-              description = feature.file # TODO: consider adding feature description and comments
-              tags = feature.tags.map(&:name)
+              name = @extractor.feature_name(feature)
+              description = @extractor.feature_location(feature) # TODO: consider adding feature description and comments
+              tags = @extractor.feature_tags(feature).map(&:name)
               type = :TEST
             end
             # TODO: multithreading # Parallel formatter always executes scenarios inside the same feature in the same process
-            if parallel? &&
+            if (parallel? || attach_to_launch?) &&
                index < path_components.size - 1 && # is folder?
-               (id_of_created_item = ReportPortal.item_id_of(name, parent_node)) # get id for folder from report portal
+               (id_of_created_item = ReportPortal.uuid_of(name, parent_node)) # get id for folder from report portal
               # get child id from other process
               item = ReportPortal::TestItem.new(name: name, type: type, id: id_of_created_item, start_time: time_to_send(desired_time), description: description, closed: false, tags: tags)
               child_node = Tree::TreeNode.new(path_component, item)
@@ -206,10 +208,6 @@ module ReportPortal
             ReportPortal.finish_item(node.content)
           end
         end
-      end
-
-      def step?(test_step)
-        !::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
       end
 
       def report_hierarchy?

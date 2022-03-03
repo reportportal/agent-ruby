@@ -1,4 +1,5 @@
 require_relative 'report'
+require_relative 'extractor'
 
 module ReportPortal
   module Cucumber
@@ -6,10 +7,19 @@ module ReportPortal
       # @api private
       def initialize(config)
         ENV['REPORT_PORTAL_USED'] = 'true'
+        @config = config
+        # Helper class used to abstract away the internal
+        # differences of cucumber 3 / 4+
+        @extractor = Extractor.create(config)
 
         setup_message_processing
 
-        @io = config.out_stream
+        case config.out_stream
+        when IO
+          @io = config.out_stream
+        when String
+          @io = File.open(config.out_stream, 'w')
+        end
 
         %i[test_case_started test_case_finished test_step_started test_step_finished test_run_finished].each do |event_name|
           config.on_event event_name do |event|
@@ -21,18 +31,24 @@ module ReportPortal
 
       def puts(message)
         process_message(:puts, message)
-        @io.puts(message)
-        @io.flush
+        @io&.puts(message)
+        @io&.flush
       end
 
       def embed(*args)
         process_message(:embed, *args)
       end
 
+      # embed is deprecated from cucumber4, should use attach
+      # instead
+      def attach(*args)
+        process_message(:attach, *args)
+      end
+
       private
 
       def report
-        @report ||= ReportPortal::Cucumber::Report.new
+        @report ||= ReportPortal::Cucumber::Report.new(@extractor)
       end
 
       def setup_message_processing
