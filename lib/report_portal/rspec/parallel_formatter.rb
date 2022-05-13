@@ -19,10 +19,6 @@ module ReportPortal
                                          :example_started, :example_passed, :example_failed,
                                          :example_pending, :message
 
-      def parallel?
-        true
-      end
-
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
       end
@@ -77,18 +73,14 @@ module ReportPortal
       end
 
       def example_group_finished(_group_notification)
-        ReportPortal.finish_item(@current_group_node.content) if !@current_group_node.nil?
-
+        ReportPortal.finish_item(@current_group_node.content) unless @current_group_node.nil?
         if attach_to_launch?
-          if @@parallel_count_for_fininshing_launch.to_i == ENV['PARALLEL_TEST_GROUPS'].to_i && ParallelTests.first_process?
-            @@parallel_count_for_fininshing_launch = read_parallel_groups_count
-            ParallelTests.wait_for_other_processes_to_finish
-            $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
-            ReportPortal.finish_launch(ReportPortal.now)
-          end
-        else
-          ReportPortal.finish_launch(ReportPortal.now)
+          @@parallel_count_for_fininshing_launch = read_parallel_groups_count
+          return unless @@parallel_count_for_fininshing_launch.to_i.zero?
+
+          $stdout.puts "Finishing launch #{ReportPortal.launch_id}"
         end
+        ReportPortal.finish_launch(ReportPortal.now)
       end
 
       def attach_to_launch?
