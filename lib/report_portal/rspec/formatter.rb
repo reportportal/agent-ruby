@@ -136,6 +136,14 @@ module ReportPortal
           ReportPortal.finish_launch(time_to_send)
         end
       end
+
+      def time_to_send(desired_time)
+        time_to_send = desired_time
+        if time_to_send <= @last_used_time
+          time_to_send = @last_used_time + 1
+        end
+        @last_used_time = time_to_send
+      end
     end
   end
 end
