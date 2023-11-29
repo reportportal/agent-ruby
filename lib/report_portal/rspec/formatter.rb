@@ -18,13 +18,24 @@ module ReportPortal
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
+        @root_node = Tree::TreeNode.new(SecureRandom.hex)
+        @current_group_node = @root_node
       end
 
       def start(_start_notification)
-        cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
-        ReportPortal.start_launch(cmd_args)
-        @root_node = Tree::TreeNode.new(SecureRandom.hex)
-        @current_group_node = @root_node
+        if ReportPortal::Settings.instance.attach_to_launch?
+          ReportPortal.launch_id =
+            if ReportPortal::Settings.instance.launch_id
+              ReportPortal::Settings.instance.launch_id
+            else
+              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+              File.read(file_path)
+            end
+          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+        else
+          cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+          ReportPortal.start_launch(cmd_args)
+        end
       end
 
       def example_group_started(group_notification)

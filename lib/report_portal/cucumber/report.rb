@@ -21,7 +21,7 @@ module ReportPortal
         start_launch
       end
 
-      def start_launch(desired_time = ReportPortal.now)
+      def start_launch
         if ReportPortal::Settings.instance.attach_to_launch?
           ReportPortal.launch_id =
             if ReportPortal::Settings.instance.launch_id
@@ -32,9 +32,8 @@ module ReportPortal
             end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
         else
-          description = ReportPortal::Settings.instance.description
-          description ||= ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, 'rp_uuid=[FILTERED]') }.join(' ')
-          ReportPortal.start_launch(description, time_to_send(desired_time))
+          cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+          ReportPortal.start_launch(cmd_args)
         end
       end
 
