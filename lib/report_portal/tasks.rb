@@ -11,7 +11,7 @@ namespace :reportportal do
     file_to_write_launch_id ||= Pathname(Dir.pwd) + 'rp_launch_id.tmp'
     launch_id = ReportPortal.start_launch(description)
     File.write(file_to_write_launch_id, launch_id)
-    return launch_id
+    launch_id
   end
 
   desc 'Finish launch in Report Portal (for use with attach_to_launch formatter mode)'
