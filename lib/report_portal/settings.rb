@@ -6,13 +6,8 @@ module ReportPortal
     include Singleton
 
     def initialize
-      filename = ENV.fetch('rp_config') do
-        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
-        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
-        glob.first
-      end
-
-      @properties = filename.nil? ? {} : YAML.load_file(filename)
+      @filename = get_settings_file
+      @properties = @filename.nil? ? {} : YAML.load_file(@filename)
       keys = {
         'uuid' => true,
         'endpoint' => true,
@@ -56,7 +51,21 @@ module ReportPortal
       formatter_modes.include?('attach_to_launch')
     end
 
+    def file_with_launch_id?
+      file_with_launch_id do
+
+      end
+    end
+
     private
+
+    def get_settings_file
+      ENV.fetch('rp_config') do
+        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
+        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
+        glob.first
+      end
+    end
 
     def setting(key)
       env_variable_name = env_variable_name(key)
