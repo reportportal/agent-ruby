@@ -52,6 +52,10 @@ module ReportPortal
       formatter_modes.include?('use_same_thread_for_reporting')
     end
 
+    def attach_to_launch?
+      formatter_modes.include?('attach_to_launch')
+    end
+
     private
 
     def setting(key)
