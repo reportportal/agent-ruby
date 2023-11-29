@@ -28,7 +28,7 @@ module ReportPortal
             if ReportPortal::Settings.instance.launch_id
               ReportPortal::Settings.instance.launch_id
             else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
+              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.pwd) + 'rp_launch_id.tmp')
               File.read(file_path)
             end
           $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
