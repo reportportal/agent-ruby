@@ -51,21 +51,7 @@ module ReportPortal
       formatter_modes.include?('attach_to_launch')
     end
 
-    def file_with_launch_id?
-      file_with_launch_id do
-
-      end
-    end
-
     private
-
-    def get_settings_file
-      ENV.fetch('rp_config') do
-        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
-        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
-        glob.first
-      end
-    end
 
     def setting(key)
       env_variable_name = env_variable_name(key)
@@ -74,6 +60,14 @@ module ReportPortal
       return YAML.safe_load(ENV[env_variable_name]) if ENV.key?(env_variable_name)
 
       @properties[key]
+    end
+
+    def get_settings_file
+      ENV.fetch('rp_config') do
+        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
+        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
+        glob.first
+      end
     end
 
     def env_variable_name(key)

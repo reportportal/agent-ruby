@@ -20,6 +20,7 @@ module ReportPortal
         ENV['REPORT_PORTAL_USED'] = 'true'
         @root_node = Tree::TreeNode.new(SecureRandom.hex)
         @parent_item_node = @root_node
+        @last_used_time = 0
       end
 
       def start(_start_notification)
