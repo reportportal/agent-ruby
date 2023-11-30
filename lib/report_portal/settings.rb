@@ -52,6 +52,19 @@ module ReportPortal
       formatter_modes.include?('attach_to_launch')
     end
 
+    def get_launch_id
+      begin
+        if ReportPortal::Settings.instance.launch_id
+          ReportPortal::Settings.instance.launch_id
+        else
+          file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.pwd) + 'rp_launch_id.tmp')
+          File.read(file_path)
+        end
+      rescue ArgumentError
+        raise "ReportPortal: Define environment variable 'launch_id' or 'file_with_launch_id' "
+      end
+    end
+
     private
 
     def setting(key)

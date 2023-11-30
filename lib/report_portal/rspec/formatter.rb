@@ -25,14 +25,7 @@ module ReportPortal
 
       def start(_start_notification)
         if ReportPortal::Settings.instance.attach_to_launch?
-          ReportPortal.launch_id =
-            if ReportPortal::Settings.instance.launch_id
-              ReportPortal::Settings.instance.launch_id
-            else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.pwd) + 'rp_launch_id.tmp')
-              File.read(file_path)
-            end
-          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+          ReportPortal.launch_id = ReportPortal::Settings.get_launch_id
         else
           cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
           ReportPortal.start_launch(cmd_args)
