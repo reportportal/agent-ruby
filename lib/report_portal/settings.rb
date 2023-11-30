@@ -1,5 +1,6 @@
 require 'yaml'
 require 'singleton'
+require 'pry'
 
 module ReportPortal
   class Settings
