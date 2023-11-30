@@ -2,7 +2,6 @@ require 'rake'
 require 'pathname'
 require 'tempfile'
 require_relative '../reportportal'
-require 'pry'
 
 namespace :reportportal do
   desc 'Start launch in Report Portal and print its id to $stdout (for use with attach_to_launch formatter mode)'
