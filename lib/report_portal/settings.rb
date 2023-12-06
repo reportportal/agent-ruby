@@ -1,18 +1,14 @@
 require 'yaml'
 require 'singleton'
 
+
 module ReportPortal
   class Settings
     include Singleton
 
     def initialize
-      filename = ENV.fetch('rp_config') do
-        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
-        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
-        glob.first
-      end
-
-      @properties = filename.nil? ? {} : YAML.load_file(filename)
+      @filename = get_settings_file
+      @properties = @filename.nil? ? {} : YAML.load_file(@filename)
       keys = {
         'uuid' => true,
         'endpoint' => true,
@@ -48,6 +44,27 @@ module ReportPortal
       setting('formatter_modes') || []
     end
 
+    def use_same_thread_for_reporting?
+      formatter_modes.include?('use_same_thread_for_reporting')
+    end
+
+    def attach_to_launch?
+      formatter_modes.include?('attach_to_launch')
+    end
+
+    def get_launch_id
+      begin
+        if ReportPortal::Settings.instance.launch_id
+          ReportPortal::Settings.instance.launch_id
+        else
+          file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.pwd) + 'rp_launch_id.tmp')
+          File.read(file_path)
+        end
+      rescue ArgumentError
+        raise "ReportPortal: Define environment variable 'launch_id' or 'file_with_launch_id' "
+      end
+    end
+
     private
 
     def setting(key)
@@ -57,6 +74,14 @@ module ReportPortal
       return YAML.safe_load(ENV[env_variable_name]) if ENV.key?(env_variable_name)
 
       @properties[key]
+    end
+
+    def get_settings_file
+      ENV.fetch('rp_config') do
+        glob = Dir.glob('{,.config/,config/}report{,-,_}portal{.yml,.yaml}')
+        p "Multiple configuration files found for ReportPortal. Using the first one: #{glob.first}" if glob.size > 1
+        glob.first
+      end
     end
 
     def env_variable_name(key)

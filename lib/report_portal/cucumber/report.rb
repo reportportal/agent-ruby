@@ -14,10 +14,6 @@ module ReportPortal
         false
       end
 
-      def attach_to_launch?
-        ReportPortal::Settings.instance.formatter_modes.include?('attach_to_launch')
-      end
-
       def initialize
         @last_used_time = 0
         @root_node = Tree::TreeNode.new('')
@@ -25,20 +21,12 @@ module ReportPortal
         start_launch
       end
 
-      def start_launch(desired_time = ReportPortal.now)
-        if attach_to_launch?
-          ReportPortal.launch_id =
-            if ReportPortal::Settings.instance.launch_id
-              ReportPortal::Settings.instance.launch_id
-            else
-              file_path = ReportPortal::Settings.instance.file_with_launch_id || (Pathname(Dir.tmpdir) + 'rp_launch_id.tmp')
-              File.read(file_path)
-            end
-          $stdout.puts "Attaching to launch #{ReportPortal.launch_id}"
+      def start_launch
+        if ReportPortal::Settings.instance.attach_to_launch?
+          ReportPortal.launch_id = ReportPortal::Settings.get_launch_id
         else
-          description = ReportPortal::Settings.instance.description
-          description ||= ARGV.map { |arg| arg.gsub(/rp_uuid=.+/, 'rp_uuid=[FILTERED]') }.join(' ')
-          ReportPortal.start_launch(description, time_to_send(desired_time))
+          cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+          ReportPortal.start_launch(cmd_args)
         end
       end
 
@@ -119,7 +107,7 @@ module ReportPortal
       def test_run_finished(_event, desired_time = ReportPortal.now)
         end_feature(desired_time) unless @parent_item_node.is_root?
 
-        unless attach_to_launch?
+        unless ReportPortal::Settings.instance.attach_to_launch?
           close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
           time_to_send = time_to_send(desired_time)
           ReportPortal.finish_launch(time_to_send)

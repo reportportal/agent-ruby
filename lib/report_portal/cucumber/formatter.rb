@@ -36,7 +36,7 @@ module ReportPortal
       end
 
       def setup_message_processing
-        return if use_same_thread_for_reporting?
+        return if ReportPortal::Settings.instance.formatter_modes.use_same_thread_for_reporting?
 
         @queue = Queue.new
         @thread = Thread.new do
@@ -49,7 +49,7 @@ module ReportPortal
       end
 
       def finish_message_processing
-        return if use_same_thread_for_reporting?
+        return if ReportPortal::Settings.instance.formatter_modes.use_same_thread_for_reporting?
 
         sleep 0.03 while !@queue.empty? || @queue.num_waiting.zero? # TODO: how to interrupt launch if the user aborted execution
         @thread.kill
@@ -57,15 +57,11 @@ module ReportPortal
 
       def process_message(report_method_name, *method_args)
         args = [report_method_name, *method_args, ReportPortal.now]
-        if use_same_thread_for_reporting?
+        if ReportPortal::Settings.instance.formatter_modes.use_same_thread_for_reporting?
           report.public_send(*args)
         else
           @queue.push(args)
         end
-      end
-
-      def use_same_thread_for_reporting?
-        ReportPortal::Settings.instance.formatter_modes.include?('use_same_thread_for_reporting')
       end
     end
   end

@@ -18,13 +18,18 @@ module ReportPortal
 
       def initialize(_output)
         ENV['REPORT_PORTAL_USED'] = 'true'
+        @root_node = Tree::TreeNode.new(SecureRandom.hex)
+        @parent_item_node = @root_node
+        @last_used_time = 0
       end
 
       def start(_start_notification)
-        cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
-        ReportPortal.start_launch(cmd_args)
-        @root_node = Tree::TreeNode.new(SecureRandom.hex)
-        @current_group_node = @root_node
+        if ReportPortal::Settings.instance.attach_to_launch?
+          ReportPortal.launch_id = ReportPortal::Settings.get_launch_id
+        else
+          cmd_args = ARGV.map { |arg| arg.include?('rp_uuid=') ? 'rp_uuid=[FILTERED]' : arg }.join(' ')
+          ReportPortal.start_launch(cmd_args)
+        end
       end
 
       def example_group_started(group_notification)
@@ -44,16 +49,16 @@ module ReportPortal
         if group_node.nil?
           p "Group node is nil for item #{item.inspect}"
         else
-          @current_group_node << group_node unless @current_group_node.nil? # make @current_group_node parent of group_node
-          @current_group_node = group_node
+          @parent_item_node << group_node unless @parent_item_node.nil? # make @current_group_node parent of group_node
+          @parent_item_node = group_node
           group_node.content.id = ReportPortal.start_item(group_node)
         end
       end
 
       def example_group_finished(_group_notification)
-        unless @current_group_node.nil?
-          ReportPortal.finish_item(@current_group_node.content)
-          @current_group_node = @current_group_node.parent
+        unless @parent_item_node.nil?
+          ReportPortal.finish_item(@parent_item_node.content)
+          @parent_item_node = @parent_item_node.parent
         end
       end
 
@@ -74,7 +79,7 @@ module ReportPortal
         if example_node.nil?
           p "Example node is nil for scenario #{ReportPortal.current_scenario.inspect}"
         else
-          @current_group_node << example_node
+          @parent_item_node << example_node
           example_node.content.id = ReportPortal.start_item(example_node)
         end
       end
@@ -104,8 +109,34 @@ module ReportPortal
         end
       end
 
-      def stop(_notification)
-        ReportPortal.finish_launch
+      def example_finished(desired_time)
+        ReportPortal.finish_item(@parent_item_node.content, nil, time_to_send(desired_time))
+      end
+
+      def close_all_children_of(root_node)
+        root_node.postordered_each do |node|
+          if !node.is_root? && !node.content.closed
+            ReportPortal.finish_item(node.content)
+          end
+        end
+      end
+
+      def stop(_notification, desired_time = ReportPortal.now)
+        example_finished(desired_time) unless @parent_item_node.is_root?
+
+        unless ReportPortal::Settings.instance.attach_to_launch?
+          close_all_children_of(@root_node) # Folder items are closed here as they can't be closed after finishing a feature
+          time_to_send = time_to_send(desired_time)
+          ReportPortal.finish_launch(time_to_send)
+        end
+      end
+
+      def time_to_send(desired_time)
+        time_to_send = desired_time
+        if time_to_send <= @last_used_time
+          time_to_send = @last_used_time + 1
+        end
+        @last_used_time = time_to_send
       end
     end
   end
